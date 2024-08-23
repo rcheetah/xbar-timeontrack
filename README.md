@@ -1,7 +1,7 @@
 
 # TimeOnTrack
 
-**TimeOnTrack** is a sophisticated time tracker for xbar that allows you to track, pause, and manage multiple projects simultaneously. It provides a convenient way to log time spent on different tasks and review your work history.
+**TimeOnTrack** is a sophisticated time tracker for [xbar](https://xbarapp.com) that allows you to track, pause, and manage multiple projects simultaneously. It provides a convenient way to log time spent on different tasks and review your work history.
 
 - Track multiple projects concurrently
 - Start, pause, and stop timers for each project
