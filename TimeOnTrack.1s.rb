@@ -21,6 +21,7 @@ require 'tmpdir'
 $EXT_DIR = "./TimeOnTrack/"
 $SAVEFILE = "#{$EXT_DIR}TimeOnTrackData.json"
 $LANG_DIR = "#{$EXT_DIR}lang/"
+$LANG_FALLBACK = "en_US"
 $EMPTY_DATA = {
   "activeJob" => nil,
   "activeEntry" => nil,
@@ -77,14 +78,14 @@ end
 def load_language_file
   # If script runs in action mode, load language from data file, as the environment variable is not passed in action mode.
   if(ARGV.length > 0)
-    $LANG = $data["language"]
+    $LANG = $data["language"] || $LANG_FALLBACK
   else
     # Script runs in regular mode. Get language from system or preferences.
     $LANG = `defaults read -g AppleLocale`.strip
-    if (ENV["VAR_LANGUAGE_OVERRIDE"])
+    if(ENV["VAR_LANGUAGE_OVERRIDE"])
       $LANG = ENV["VAR_LANGUAGE_OVERRIDE"] unless ENV["VAR_LANGUAGE_OVERRIDE"].strip.empty?
     end
-    $LANG = "en_US" if $LANG.strip.empty?
+    $LANG = $LANG_FALLBACK if $LANG.strip.empty?
   end
 
   `export LANG="#{$LANG}.UTF-8"`
