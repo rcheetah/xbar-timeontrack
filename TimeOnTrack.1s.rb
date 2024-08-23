@@ -87,6 +87,8 @@ def load_language_file
     $LANG = "en_US" if $LANG.strip.empty?
   end
 
+  `export LANG="#{$LANG}.UTF-8"`
+
   # load language file
   lang_file_path = File.join($LANG_DIR, "#{$LANG}.json")
   if File.exist?(lang_file_path)
