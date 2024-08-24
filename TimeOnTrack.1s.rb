@@ -135,7 +135,7 @@ def run_command(command, parameters = [])
     param_string += "\"#{param.gsub('"', '\\"')}\""
     param_strings << param_string
   }
-  cmd_string = "bash=\"#{__FILE__}\" param1=#{command} #{param_strings.join(" ")} terminal=false"
+  cmd_string = "shell=\"#{__FILE__}\" param1=#{command} #{param_strings.join(" ")} terminal=false"
   return cmd_string
 end
 
