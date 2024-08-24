@@ -18,6 +18,21 @@ require 'time'
 require 'tmpdir'
 
 
+$ICON = {
+  "logo"    => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEgewogICAgICAgIGZpbGw6ICNmZmY7CiAgICAgICAgc3Ryb2tlOiAjMDAwOwogICAgICAgIHN0cm9rZS1taXRlcmxpbWl0OiAxMDsKICAgICAgICBzdHJva2Utd2lkdGg6IDJweDsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHBhdGggZD0iTTksNWMzLjAzLDAsNS41LDIuNDcsNS41LDUuNXMtMi40Nyw1LjUtNS41LDUuNS01LjUtMi40Ny01LjUtNS41LDIuNDctNS41LDUuNS01LjVNOSwzYy00LjE0LDAtNy41LDMuMzYtNy41LDcuNXMzLjM2LDcuNSw3LjUsNy41LDcuNS0zLjM2LDcuNS03LjUtMy4zNi03LjUtNy41LTcuNWgwWiIvPgogIDxsaW5lIGNsYXNzPSJjbHMtMSIgeDE9IjUuNSIgeTE9IjEiIHgyPSIxMi41IiB5Mj0iMSIvPgogIDxsaW5lIGNsYXNzPSJjbHMtMSIgeDE9IjkiIHkxPSIxLjI4IiB4Mj0iOSIgeTI9IjQiLz4KICA8Zz4KICAgIDxsaW5lIGNsYXNzPSJjbHMtMSIgeDE9IjUuNSIgeTE9IjEwIiB4Mj0iMTIuNSIgeTI9IjEwIi8+CiAgICA8bGluZSBjbGFzcz0iY2xzLTEiIHgxPSI5IiB5MT0iMTAuMjgiIHgyPSI5IiB5Mj0iMTMiLz4KICA8L2c+Cjwvc3ZnPg==",
+  "new"     => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxyZWN0IHg9IjciIHk9IjIiIHdpZHRoPSI0IiBoZWlnaHQ9IjE0IiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxOCkgcm90YXRlKDkwKSIvPgogIDxyZWN0IHg9IjciIHk9IjIiIHdpZHRoPSI0IiBoZWlnaHQ9IjE0Ii8+Cjwvc3ZnPg==",
+  "journal" => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEgewogICAgICAgIGZpbGw6IG5vbmU7CiAgICAgIH0KCiAgICAgIC5jbHMtMSwgLmNscy0yIHsKICAgICAgICBzdHJva2U6ICMwMDA7CiAgICAgICAgc3Ryb2tlLW1pdGVybGltaXQ6IDEwOwogICAgICAgIHN0cm9rZS13aWR0aDogMS41cHg7CiAgICAgIH0KCiAgICAgIC5jbHMtMiB7CiAgICAgICAgZmlsbDogI2ZmZjsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHJlY3QgY2xhc3M9ImNscy0xIiB4PSI1Ljc1IiB5PSIzIiB3aWR0aD0iOS41IiBoZWlnaHQ9IjEyLjUiLz4KICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik01Ljc1LDN2MTIuNWgtMS41Yy0uODMsMC0xLjUtLjY3LTEuNS0xLjVWM2MwLS44My42Ny0xLjUsMS41LTEuNXMxLjUuNjcsMS41LDEuNVoiLz4KICA8bGluZSBjbGFzcz0iY2xzLTIiIHgxPSI4IiB5MT0iNiIgeDI9IjEzIiB5Mj0iNiIvPgogIDxsaW5lIGNsYXNzPSJjbHMtMiIgeDE9IjgiIHkxPSI5IiB4Mj0iMTMiIHkyPSI5Ii8+CiAgPGxpbmUgY2xhc3M9ImNscy0yIiB4MT0iOCIgeTE9IjEyIiB4Mj0iMTMiIHkyPSIxMiIvPgo8L3N2Zz4=",
+  "archive" => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEgewogICAgICAgIGZpbGw6IG5vbmU7CiAgICAgICAgc3Ryb2tlLXdpZHRoOiAxLjVweDsKICAgICAgfQoKICAgICAgLmNscy0xLCAuY2xzLTIgewogICAgICAgIHN0cm9rZTogIzAwMDsKICAgICAgICBzdHJva2UtbWl0ZXJsaW1pdDogMTA7CiAgICAgIH0KICAgIDwvc3R5bGU+CiAgPC9kZWZzPgogIDxwb2x5bGluZSBjbGFzcz0iY2xzLTEiIHBvaW50cz0iMTQuNzUgNC41IDE0Ljc1IC43NSAxMC4yNSAuNzUgOC4zMSAyLjc1IDMuMjUgMi43NSAzLjI1IDYuNSIvPgogIDxwb2x5bGluZSBjbGFzcz0iY2xzLTEiIHBvaW50cz0iMTUuMjUgMTAuNSAxNS4yNSA0LjI1IDExLjI1IDQuMjUgOS4yNSA2LjI1IDIuNzUgNi4yNSAyLjc1IDkuNSIvPgogIDxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTEzLjUsOC41bC0xLDEuNWgtN2wtMS0xLjVoLTIuNXY3aDE0di03aC0yLjVaTTEzLDE0LjVINXYtMy41aDh2My41WiIvPgo8L3N2Zz4=",
+  "delete"  => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEsIC5jbHMtMiB7CiAgICAgICAgc3Ryb2tlLXdpZHRoOiAxLjVweDsKICAgICAgfQoKICAgICAgLmNscy0xLCAuY2xzLTIsIC5jbHMtMyB7CiAgICAgICAgc3Ryb2tlOiAjMDAwOwogICAgICAgIHN0cm9rZS1taXRlcmxpbWl0OiAxMDsKICAgICAgfQoKICAgICAgLmNscy0xLCAuY2xzLTMgewogICAgICAgIGZpbGw6IG5vbmU7CiAgICAgIH0KCiAgICAgIC5jbHMtMiB7CiAgICAgICAgZmlsbDogI2ZmZjsKICAgICAgfQoKICAgICAgLmNscy0zIHsKICAgICAgICBzdHJva2Utd2lkdGg6IDJweDsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHBvbHlnb24gY2xhc3M9ImNscy0zIiBwb2ludHM9IjE0Ljc1IDMgMy41IDMgNC40OCAxNiAxMy43NyAxNiAxNC43NSAzIi8+CiAgPHJlY3QgY2xhc3M9ImNscy0yIiB4PSIyLjI1IiB5PSIyLjc1IiB3aWR0aD0iMTMuNSIgaGVpZ2h0PSIxIi8+CiAgPHJlY3QgY2xhc3M9ImNscy0yIiB4PSI3LjI1IiB5PSIxLjc1IiB3aWR0aD0iMy41IiBoZWlnaHQ9IjEiLz4KICA8cG9seWxpbmUgY2xhc3M9ImNscy0xIiBwb2ludHM9IjcgNi41IDcgOCAxMSA4IDExIDYuNSIvPgo8L3N2Zz4==",
+  "file"    => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEgewogICAgICAgIGZpbGw6ICNmZmY7CiAgICAgICAgc3Ryb2tlLXdpZHRoOiAxLjVweDsKICAgICAgfQoKICAgICAgLmNscy0xLCAuY2xzLTIgewogICAgICAgIHN0cm9rZTogIzAwMDsKICAgICAgICBzdHJva2UtbWl0ZXJsaW1pdDogMTA7CiAgICAgIH0KCiAgICAgIC5jbHMtMiB7CiAgICAgICAgZmlsbDogbm9uZTsKICAgICAgICBzdHJva2Utd2lkdGg6IDJweDsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHBvbHlnb24gY2xhc3M9ImNscy0yIiBwb2ludHM9IjE0LjUgNi41IDE0LjUgMTYgMy41IDE2IDMuNSAyIDEwIDIgMTQuNSA2LjUiLz4KICA8cG9seWxpbmUgY2xhc3M9ImNscy0yIiBwb2ludHM9IjkuNSAyLjAyIDkuNSA2Ljk5IDE0LjUgNi45OSIvPgogIDxsaW5lIGNsYXNzPSJjbHMtMSIgeDE9IjYiIHkxPSIxMi43NSIgeDI9IjEyIiB5Mj0iMTIuNzUiLz4KICA8bGluZSBjbGFzcz0iY2xzLTEiIHgxPSI2IiB5MT0iMTAuMjUiIHgyPSIxMiIgeTI9IjEwLjI1Ii8+Cjwvc3ZnPg==",
+  "pause"   => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSI0LjUiIGhlaWdodD0iMTIiLz4KICA8cmVjdCB4PSIxMC41IiB5PSIzIiB3aWR0aD0iNC41IiBoZWlnaHQ9IjEyIi8+Cjwvc3ZnPg==",
+  "play"    => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxwb2x5Z29uIHBvaW50cz0iMTQuMzMgOSA0LjMzIDIuMzMgNC4zMyAxNS42NyAxNC4zMyA5Ii8+Cjwvc3ZnPg==",
+  "rename"  => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxwb2x5Z29uIHBvaW50cz0iMS4yMiAxNi43OCA2LjUzIDE1LjcyIDIuMjggMTEuNDcgMS4yMiAxNi43OCIvPgogIDxyZWN0IHg9IjUuODIiIHk9IjMuOTMiIHdpZHRoPSI2IiBoZWlnaHQ9IjEwLjUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDkuMDcgLTMuNTUpIHJvdGF0ZSg0NSkiLz4KICA8cmVjdCB4PSIxMC45NSIgeT0iMy4wNSIgd2lkdGg9IjYiIGhlaWdodD0iMiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNi45NSAtOC42OCkgcm90YXRlKDQ1KSIvPgo8L3N2Zz4==",
+  "stop"    => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxyZWN0IHg9IjMuNSIgeT0iMy41IiB3aWR0aD0iMTEiIGhlaWdodD0iMTEiLz4KPC9zdmc+",
+  "time"    => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEgewogICAgICAgIGZpbGw6IG5vbmU7CiAgICAgICAgc3Ryb2tlOiAjMDAwOwogICAgICAgIHN0cm9rZS1taXRlcmxpbWl0OiAxMDsKICAgICAgICBzdHJva2Utd2lkdGg6IDJweDsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHBhdGggZD0iTTksM2MzLjMxLDAsNiwyLjY5LDYsNnMtMi42OSw2LTYsNi02LTIuNjktNi02LDIuNjktNiw2LTZNOSwxQzQuNTgsMSwxLDQuNTgsMSw5czMuNTgsOCw4LDgsOC0zLjU4LDgtOFMxMy40MiwxLDksMWgwWiIvPgogIDxwb2x5bGluZSBjbGFzcz0iY2xzLTEiIHBvaW50cz0iOC41IDQuNSA4LjUgMTAgMTIuNSAxMCIvPgo8L3N2Zz4="
+}
+
+
 $EXT_DIR = "./TimeOnTrack/"
 $SAVEFILE = "#{$EXT_DIR}TimeOnTrackData.json"
 $LANG_DIR = "#{$EXT_DIR}lang/"
@@ -107,6 +122,10 @@ def t(key, placeholders = {})
     translation.gsub!("%{#{placeholder}}", value.to_s)
   end
   return translation
+end
+
+def icon(icon, preserve_color=false)
+  return " | #{preserve_color ? "image" : "templateImage"}=\"#{$ICON[icon]}\""
 end
 
 def run_command(command, parameters = [])
@@ -295,12 +314,12 @@ def buildMenu()
 
   # Menubar
   if $data["activeJob"].nil?
-    puts t("plugin_title_bar")
+    puts "#{icon("logo")}"
   else
     if $data["activeEntry"]
-      puts "🟢 #{format_duration(activeJob["total"], true)}"
+      puts "#{format_duration(activeJob["total"], true)} #{icon("play")}"
     else
-      puts "🟥 #{format_duration(activeJob["total"], true)} | color=red"
+      puts "#{format_duration(activeJob["total"], true)} #{icon("pause")} | color=#cc0000"
     end
   end
 
@@ -309,10 +328,10 @@ def buildMenu()
 
   # Dropdown
 
-  puts "⏯️ #{t("job.continue", { jobname: activeJob["name"] })} | #{run_command("job:start", [activeJob["id"]])}" if $data["activeJob"] && !$data["activeEntry"]
-  puts "⏸️ #{t("job.pause", { jobname: activeJob["name"] })} | #{run_command("job:pause")}" if $data["activeEntry"]
-  puts "⏹️ #{t("job.stop", { jobname: activeJob["name"] })} | #{run_command("job:stop")}" if $data["activeJob"]
-  puts "➕ #{t("job.new")} | #{run_command("job:new")}" unless $data["activeEntry"]
+  puts "#{t("job.continue", { jobname: activeJob["name"] })} | #{run_command("job:start", [activeJob["id"]])} #{icon("play")}" if $data["activeJob"] && !$data["activeEntry"]
+  puts "#{t("job.pause", { jobname: activeJob["name"] })} | #{run_command("job:pause")} #{icon("pause")}" if $data["activeEntry"]
+  puts "#{t("job.stop", { jobname: activeJob["name"] })} | #{run_command("job:stop")} #{icon("stop")}" if $data["activeJob"]
+  puts "#{t("job.new")} | #{run_command("job:new")} #{icon("new")}" unless $data["activeEntry"]
 
   # Visual Divider
   puts "---"
@@ -324,22 +343,22 @@ def buildMenu()
     else
       job_is_tracking = false
     end
-    puts "#{job_is_tracking ? "🔴 " : ""}#{job["name"]} | length=30"
-    puts "-- 🕘 #{format_duration(job["total"])}"
+    puts "#{job["name"]} | length=30 #{job_is_tracking ? icon("running", true) : ""}"
+    puts "-- #{format_duration(job["total"])} #{icon("time")}"
     puts "-----"
-    puts "-- ⏯️ #{t("job.menu.continue")} | #{run_command("job:start", [job["id"]])} | refresh=true #{"| disabled=true" if job_is_tracking}"
-    puts "-- ✏️ #{t("job.menu.rename")} | #{run_command("job:rename", [job["id"]])} | refresh=true"
-    puts "-- 🗄️ #{t("job.menu.archive")} | #{run_command("job:archive", [job["id"]])} | refresh=true #{"| disabled=true" if job_is_tracking}"
-    puts "-- 🗑️ #{t("job.menu.delete")} | #{run_command("job:delete", [job["id"]])} | refresh=true #{"| disabled=true" if job_is_tracking}"
+    puts "-- #{t("job.menu.continue")} | #{run_command("job:start", [job["id"]])} #{icon("play")} | refresh=true #{"| disabled=true" if job_is_tracking}"
+    puts "-- #{t("job.menu.rename")} | #{run_command("job:rename", [job["id"]])} #{icon("rename")} | refresh=true"
+    puts "-- #{t("job.menu.archive")} | #{run_command("job:archive", [job["id"]])} #{icon("archive")} | refresh=true #{"| disabled=true" if job_is_tracking}"
+    puts "-- #{t("job.menu.delete")} | #{run_command("job:delete", [job["id"]])} #{icon("delete")} | refresh=true #{"| disabled=true" if job_is_tracking}"
     if(job["entries"].length > 0)
       puts "-----"
       puts "-- #{t("job.menu.entries")}"
       job["entries"].each { |entry|
         entry_is_tracking = ( $data["activeEntry"] == entry["id"] )
-        puts "-- #{entry_is_tracking ? "🔴 " : ""}#{format_duration( entry["total"])} (#{Time.at(entry["start"]).strftime("%Y-%m-%d %H:%M")})"
+        puts "-- #{format_duration( entry["total"])} (#{Time.at(entry["start"]).strftime("%Y-%m-%d %H:%M")}) #{entry_is_tracking ? icon("running", true) : ""}"
         unless entry_is_tracking
-          puts "---- ✏️ #{t("entry.rename")} | #{run_command("entry:edit", [entry["id"]])} | refresh=true"
-          puts "---- 🗑️ #{t("entry.delete")} | #{run_command("entry:delete", [entry["id"]])} | refresh=true"
+          puts "---- #{t("entry.rename")} | #{run_command("entry:edit", [entry["id"]])} #{icon("rename")} | refresh=true"
+          puts "---- #{t("entry.delete")} | #{run_command("entry:delete", [entry["id"]])} #{icon("delete")} | refresh=true"
         end
       }
     else
@@ -350,8 +369,8 @@ def buildMenu()
   # Visual Divider
   puts "---"
 
-  puts "📖 #{t("journal.show")} | #{run_command("journal:open")}"
-  puts "📝 #{t("savefile.edit")} | #{run_command("savefile:edit")} | alternate=true"
+  puts "#{t("journal.show")} #{icon("journal")} | #{run_command("journal:open")} #{icon("journal")}"
+  puts "#{t("savefile.edit")} #{icon("file")} | #{run_command("savefile:edit")} | alternate=true"
 
 end
 
