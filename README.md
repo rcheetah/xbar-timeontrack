@@ -11,6 +11,9 @@
 - Supports localization
 
 
+![Screenshot of the TimeOnTrack plugin](./screenshot.jpg)
+
+
 ## Features
 
 ### Track Jobs Individually
