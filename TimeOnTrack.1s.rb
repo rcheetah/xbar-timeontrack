@@ -345,7 +345,7 @@ def buildMenu()
     else
       job_is_tracking = false
     end
-    puts "#{job["name"]} | length=30 #{job_is_tracking ? icon("running", true) : ""}"
+    puts "#{job["name"]} | length=35 #{job_is_tracking ? icon("running", true) : ""}"
     puts "-- #{format_duration(job["total"])} #{icon("time")}"
     puts "-----"
     puts "-- #{t("job.menu.continue")} | #{run_command("job:start", [job["id"]])} #{icon("play")} | refresh=true #{"| disabled=true" if job_is_tracking}"
