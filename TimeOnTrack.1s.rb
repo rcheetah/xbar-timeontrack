@@ -6,7 +6,9 @@
 #  <xbar.author>Roman Gebath</xbar.author>
 #  <xbar.author.github>rcheetah</xbar.author.github>
 #  <xbar.desc>A sophisticated time tracker, which allows to track and pause mulitple projects at once.</xbar.desc>
+#  <xbar.image>https://github.com/rcheetah/xbar-timeontrack/blob/ea0f22ad093ec8ed3eabca3a774f78f241752f54/screenshot.jpg</xbar.image>
 #  <xbar.dependencies>ruby</xbar.dependencies>
+#  <xbar.abouturl>https://github.com/rcheetah/xbar-timeontrack/</xbar.abouturl>
 
 # Variables for preferences in the app:
 #  <xbar.var>string(VAR_LANGUAGE_OVERRIDE=): Override the system language using a language code (e.g. en_US, de_DE)</xbar.var>
