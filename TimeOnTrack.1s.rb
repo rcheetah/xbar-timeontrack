@@ -322,9 +322,9 @@ def buildMenu()
     puts "#{icon("logo")}"
   else
     if $data["activeEntry"]
-      puts "#{format_duration(activeJob["total"], true)} #{icon(activeJob["total"] % 2 == 0 ? "rec" : "rec-alt")} | #{$FONT_MENU} | color=#88ff88"
+      puts "#{format_duration(activeJob["total"], true)} #{icon(activeJob["total"] % 2 == 0 ? "rec" : "rec-alt")} | #{$FONT_MENU}" #| color=#88ff88
     else
-      puts "#{format_duration(activeJob["total"], true)} #{icon("pause")} | #{$FONT_MENU} | color=#ffaaaa"
+      puts "#{format_duration(activeJob["total"], true)} #{icon("pause")} | #{$FONT_MENU}" #| color=#ffaaaa
     end
   end
 
