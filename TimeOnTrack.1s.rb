@@ -31,7 +31,9 @@ $ICON = {
   "play"    => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxwb2x5Z29uIHBvaW50cz0iMTQuMzMgOSA0LjMzIDIuMzMgNC4zMyAxNS42NyAxNC4zMyA5Ii8+Cjwvc3ZnPg==",
   "rename"  => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxwb2x5Z29uIHBvaW50cz0iMS4yMiAxNi43OCA2LjUzIDE1LjcyIDIuMjggMTEuNDcgMS4yMiAxNi43OCIvPgogIDxyZWN0IHg9IjUuODIiIHk9IjMuOTMiIHdpZHRoPSI2IiBoZWlnaHQ9IjEwLjUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDkuMDcgLTMuNTUpIHJvdGF0ZSg0NSkiLz4KICA8cmVjdCB4PSIxMC45NSIgeT0iMy4wNSIgd2lkdGg9IjYiIGhlaWdodD0iMiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNi45NSAtOC42OCkgcm90YXRlKDQ1KSIvPgo8L3N2Zz4==",
   "stop"    => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxyZWN0IHg9IjMuNSIgeT0iMy41IiB3aWR0aD0iMTEiIGhlaWdodD0iMTEiLz4KPC9zdmc+",
-  "time"    => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEgewogICAgICAgIGZpbGw6IG5vbmU7CiAgICAgICAgc3Ryb2tlOiAjMDAwOwogICAgICAgIHN0cm9rZS1taXRlcmxpbWl0OiAxMDsKICAgICAgICBzdHJva2Utd2lkdGg6IDJweDsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHBhdGggZD0iTTksM2MzLjMxLDAsNiwyLjY5LDYsNnMtMi42OSw2LTYsNi02LTIuNjktNi02LDIuNjktNiw2LTZNOSwxQzQuNTgsMSwxLDQuNTgsMSw5czMuNTgsOCw4LDgsOC0zLjU4LDgtOFMxMy40MiwxLDksMWgwWiIvPgogIDxwb2x5bGluZSBjbGFzcz0iY2xzLTEiIHBvaW50cz0iOC41IDQuNSA4LjUgMTAgMTIuNSAxMCIvPgo8L3N2Zz4="
+  "time"    => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEgewogICAgICAgIGZpbGw6IG5vbmU7CiAgICAgICAgc3Ryb2tlOiAjMDAwOwogICAgICAgIHN0cm9rZS1taXRlcmxpbWl0OiAxMDsKICAgICAgICBzdHJva2Utd2lkdGg6IDJweDsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHBhdGggZD0iTTksM2MzLjMxLDAsNiwyLjY5LDYsNnMtMi42OSw2LTYsNi02LTIuNjktNi02LDIuNjktNiw2LTZNOSwxQzQuNTgsMSwxLDQuNTgsMSw5czMuNTgsOCw4LDgsOC0zLjU4LDgtOFMxMy40MiwxLDksMWgwWiIvPgogIDxwb2x5bGluZSBjbGFzcz0iY2xzLTEiIHBvaW50cz0iOC41IDQuNSA4LjUgMTAgMTIuNSAxMCIvPgo8L3N2Zz4=",
+  "rec"     => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxjaXJjbGUgY3g9IjkiIGN5PSI5IiByPSI2Ii8+Cjwvc3ZnPg==",
+  "rec-alt" => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxwYXRoIGQ9Ik05LDNjLTMuMzEsMC02LDIuNjktNiw2czIuNjksNiw2LDYsNi0yLjY5LDYtNi0yLjY5LTYtNi02Wk05LDEyYy0xLjY2LDAtMy0xLjM0LTMtM3MxLjM0LTMsMy0zLDMsMS4zNCwzLDMtMS4zNCwzLTMsM1oiLz4KPC9zdmc+"
 }
 
 
@@ -39,6 +41,7 @@ $EXT_DIR = "./TimeOnTrack/"
 $SAVEFILE = "#{$EXT_DIR}TimeOnTrackData.json"
 $LANG_DIR = "#{$EXT_DIR}lang/"
 $LANG_FALLBACK = "en_US"
+$FONT_MENU = "font='PTMono-Bold' size=13"
 $EMPTY_DATA = {
   "activeJob" => nil,
   "activeEntry" => nil,
@@ -319,9 +322,9 @@ def buildMenu()
     puts "#{icon("logo")}"
   else
     if $data["activeEntry"]
-      puts "#{format_duration(activeJob["total"], true)} #{icon("play")}"
+      puts "#{format_duration(activeJob["total"], true)} #{icon(activeJob["total"] % 2 == 0 ? "rec" : "rec-alt")} | #{$FONT_MENU} | color=#88ff88"
     else
-      puts "#{format_duration(activeJob["total"], true)} #{icon("pause")} | color=#cc0000"
+      puts "#{format_duration(activeJob["total"], true)} #{icon("pause")} | #{$FONT_MENU} | color=#ffaaaa"
     end
   end
 
