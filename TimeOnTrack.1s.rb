@@ -2,7 +2,7 @@
 
 # Metadata for xBar
 #  <xbar.title>TimeOnTrack</xbar.title>
-#  <xbar.version>v1.0.0</xbar.version>
+#  <xbar.version>v1.1.0</xbar.version>
 #  <xbar.author>Roman Gebath</xbar.author>
 #  <xbar.author.github>rcheetah</xbar.author.github>
 #  <xbar.desc>A sophisticated time tracker, which allows to track and pause mulitple projects at once.</xbar.desc>
@@ -29,7 +29,8 @@ $ICON = {
   "file"    => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEgewogICAgICAgIGZpbGw6ICNmZmY7CiAgICAgICAgc3Ryb2tlLXdpZHRoOiAxLjVweDsKICAgICAgfQoKICAgICAgLmNscy0xLCAuY2xzLTIgewogICAgICAgIHN0cm9rZTogIzAwMDsKICAgICAgICBzdHJva2UtbWl0ZXJsaW1pdDogMTA7CiAgICAgIH0KCiAgICAgIC5jbHMtMiB7CiAgICAgICAgZmlsbDogbm9uZTsKICAgICAgICBzdHJva2Utd2lkdGg6IDJweDsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHBvbHlnb24gY2xhc3M9ImNscy0yIiBwb2ludHM9IjE0LjUgNi41IDE0LjUgMTYgMy41IDE2IDMuNSAyIDEwIDIgMTQuNSA2LjUiLz4KICA8cG9seWxpbmUgY2xhc3M9ImNscy0yIiBwb2ludHM9IjkuNSAyLjAyIDkuNSA2Ljk5IDE0LjUgNi45OSIvPgogIDxsaW5lIGNsYXNzPSJjbHMtMSIgeDE9IjYiIHkxPSIxMi43NSIgeDI9IjEyIiB5Mj0iMTIuNzUiLz4KICA8bGluZSBjbGFzcz0iY2xzLTEiIHgxPSI2IiB5MT0iMTAuMjUiIHgyPSIxMiIgeTI9IjEwLjI1Ii8+Cjwvc3ZnPg==",
   "pause"   => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxyZWN0IHg9IjMiIHk9IjMiIHdpZHRoPSI0LjUiIGhlaWdodD0iMTIiLz4KICA8cmVjdCB4PSIxMC41IiB5PSIzIiB3aWR0aD0iNC41IiBoZWlnaHQ9IjEyIi8+Cjwvc3ZnPg==",
   "play"    => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxwb2x5Z29uIHBvaW50cz0iMTQuMzMgOSA0LjMzIDIuMzMgNC4zMyAxNS42NyAxNC4zMyA5Ii8+Cjwvc3ZnPg==",
-  "rename"  => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxwb2x5Z29uIHBvaW50cz0iMS4yMiAxNi43OCA2LjUzIDE1LjcyIDIuMjggMTEuNDcgMS4yMiAxNi43OCIvPgogIDxyZWN0IHg9IjUuODIiIHk9IjMuOTMiIHdpZHRoPSI2IiBoZWlnaHQ9IjEwLjUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDkuMDcgLTMuNTUpIHJvdGF0ZSg0NSkiLz4KICA8cmVjdCB4PSIxMC45NSIgeT0iMy4wNSIgd2lkdGg9IjYiIGhlaWdodD0iMiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNi45NSAtOC42OCkgcm90YXRlKDQ1KSIvPgo8L3N2Zz4==",
+  "edit"    => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxwb2x5Z29uIHBvaW50cz0iMS4yMiAxNi43OCA2LjUzIDE1LjcyIDIuMjggMTEuNDcgMS4yMiAxNi43OCIvPgogIDxyZWN0IHg9IjUuODIiIHk9IjMuOTMiIHdpZHRoPSI2IiBoZWlnaHQ9IjEwLjUiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDkuMDcgLTMuNTUpIHJvdGF0ZSg0NSkiLz4KICA8cmVjdCB4PSIxMC45NSIgeT0iMy4wNSIgd2lkdGg9IjYiIGhlaWdodD0iMiIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNi45NSAtOC42OCkgcm90YXRlKDQ1KSIvPgo8L3N2Zz4==",
+  "rename"  => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxwYXRoIGQ9Ik0xNywxM1Y1aC01di0yaDJWMWgtNnYyaDJ2MkgxdjhoOXYyaC0ydjJoNnYtMmgtMnYtMmg1Wk0xNSw3djRoLTN2LTRoM1pNMywxMXYtNGg3djRIM1oiLz4KPC9zdmc+",
   "stop"    => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxyZWN0IHg9IjMuNSIgeT0iMy41IiB3aWR0aD0iMTEiIGhlaWdodD0iMTEiLz4KPC9zdmc+",
   "time"    => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxkZWZzPgogICAgPHN0eWxlPgogICAgICAuY2xzLTEgewogICAgICAgIGZpbGw6IG5vbmU7CiAgICAgICAgc3Ryb2tlOiAjMDAwOwogICAgICAgIHN0cm9rZS1taXRlcmxpbWl0OiAxMDsKICAgICAgICBzdHJva2Utd2lkdGg6IDJweDsKICAgICAgfQogICAgPC9zdHlsZT4KICA8L2RlZnM+CiAgPHBhdGggZD0iTTksM2MzLjMxLDAsNiwyLjY5LDYsNnMtMi42OSw2LTYsNi02LTIuNjktNi02LDIuNjktNiw2LTZNOSwxQzQuNTgsMSwxLDQuNTgsMSw5czMuNTgsOCw4LDgsOC0zLjU4LDgtOFMxMy40MiwxLDksMWgwWiIvPgogIDxwb2x5bGluZSBjbGFzcz0iY2xzLTEiIHBvaW50cz0iOC41IDQuNSA4LjUgMTAgMTIuNSAxMCIvPgo8L3N2Zz4=",
   "rec"     => "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iRWJlbmVfMSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgMTggMTgiPgogIDxjaXJjbGUgY3g9IjkiIGN5PSI5IiByPSI2Ii8+Cjwvc3ZnPg==",
@@ -360,9 +361,12 @@ def buildMenu()
       puts "-- #{t("job.menu.entries")}"
       job["entries"].each { |entry|
         entry_is_tracking = ( $data["activeEntry"] == entry["id"] )
-        puts "-- #{format_duration( entry["total"])} (#{Time.at(entry["start"]).strftime("%Y-%m-%d %H:%M")}) #{entry_is_tracking ? icon("running", true) : ""}"
+        entry_name = Time.at(entry["start"]).strftime("%Y-%m-%d %H:%M")
+        entry_name = entry["name"] if entry["name"]
+        puts "-- #{format_duration( entry["total"])} (#{entry_name}) #{entry_is_tracking ? icon("running", true) : ""}"
         unless entry_is_tracking
-          puts "---- #{t("entry.rename")} | #{run_command("entry:edit", [entry["id"]])} #{icon("rename")} | refresh=true"
+          puts "---- #{t("entry.edit")} | #{run_command("entry:edit", [entry["id"]])} #{icon("edit")} | refresh=true"
+          puts "---- #{t("entry.rename")} | #{run_command("entry:rename", [entry["id"]])} #{icon("rename")} | refresh=true"
           puts "---- #{t("entry.delete")} | #{run_command("entry:delete", [entry["id"]])} #{icon("delete")} | refresh=true"
         end
       }
@@ -487,6 +491,21 @@ def actionHandler()
       end
     rescue => error
       alert("#{t("error.entry:edit")} \n#{error.message}\n#{error.backtrace.join("\n")}")
+    end
+
+  when "entry:rename"
+    begin
+      # TODO
+      entry = getEntryById(ARGV[1])
+      job = getJobById(entry["job_id"])
+
+      new_entry_name = prompt(t("prompt.entry.rename", {jobname: job["name"], duration: format_duration(entry["total"])}), input: "#{entry["name"] || ""}")
+      exit if new_entry_name.nil? # user canceled the dialog
+      entry["name"] = new_entry_name
+      entry["name"] = nil if new_entry_name.strip.empty?
+    rescue => error
+      alert("Errror rename")
+      alert("#{t("error.entry:rename")} \n#{error.message}\n#{error.backtrace.join("\n")}")
     end
 
   when "journal:open"
