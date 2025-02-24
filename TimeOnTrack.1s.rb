@@ -323,9 +323,9 @@ def buildMenu()
     puts "#{icon("logo")}"
   else
     if $data["activeEntry"]
-      puts "#{format_duration(activeJob["total"], true)} #{icon(activeJob["total"] % 2 == 0 ? "rec" : "rec-alt")} | #{$FONT_MENU}" #| color=#88ff88
+      puts "#{format_duration(activeJob["total"], true)} #{icon(activeJob["total"] % 2 == 0 ? "rec" : "rec-alt")} | #{$FONT_MENU} | refresh=true" #| color=#88ff88
     else
-      puts "#{format_duration(activeJob["total"], true)} #{icon("pause")} | #{$FONT_MENU}" #| color=#ffaaaa
+      puts "#{format_duration(activeJob["total"], true)} #{icon("pause")} | #{$FONT_MENU} | refresh=true" #| color=#ffaaaa
     end
   end
 
@@ -334,10 +334,10 @@ def buildMenu()
 
   # Dropdown
 
-  puts "#{t("job.continue", { jobname: activeJob["name"] })} | #{run_command("job:start", [activeJob["id"]])} #{icon("play")}" if $data["activeJob"] && !$data["activeEntry"]
-  puts "#{t("job.pause", { jobname: activeJob["name"] })} | #{run_command("job:pause")} #{icon("pause")}" if $data["activeEntry"]
-  puts "#{t("job.stop", { jobname: activeJob["name"] })} | #{run_command("job:stop")} #{icon("stop")}" if $data["activeJob"]
-  puts "#{t("job.new")} | #{run_command("job:new")} #{icon("new")}" unless $data["activeEntry"]
+  puts "#{t("job.continue", { jobname: activeJob["name"] })} | refresh=true | #{run_command("job:start", [activeJob["id"]])} #{icon("play")}" if $data["activeJob"] && !$data["activeEntry"]
+  puts "#{t("job.pause", { jobname: activeJob["name"] })} | refresh=true | #{run_command("job:pause")} #{icon("pause")}" if $data["activeEntry"]
+  puts "#{t("job.stop", { jobname: activeJob["name"] })} | refresh=true | #{run_command("job:stop")} #{icon("stop")}" if $data["activeJob"]
+  puts "#{t("job.new")} | refresh=true | #{run_command("job:new")} #{icon("new")}" unless $data["activeEntry"]
 
   # Visual Divider
   puts "---"
