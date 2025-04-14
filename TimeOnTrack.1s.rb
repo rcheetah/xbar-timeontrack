@@ -356,6 +356,7 @@ def buildMenu()
     puts "-- #{t("job.menu.rename")} | #{run_command("job:rename", [job["id"]])} #{icon("rename")} | refresh=true"
     puts "-- #{t("job.menu.archive")} | #{run_command("job:archive", [job["id"]])} #{icon("archive")} | refresh=true #{"| disabled=true" if job_is_tracking}"
     puts "-- #{t("job.menu.delete")} | #{run_command("job:delete", [job["id"]])} #{icon("delete")} | refresh=true #{"| disabled=true" if job_is_tracking}"
+    puts "-- #{t("job.menu.daily_summary")} | #{run_command("job:summary", [job["id"]])} #{icon("journal")} | refresh=true"
     if(job["entries"].length > 0)
       puts "-----"
       puts "-- #{t("job.menu.entries")}"
@@ -457,6 +458,20 @@ def actionHandler()
 
     rescue => error
       alert("#{t("error.job:delete")} \n#{error.message}\n#{error.backtrace.join("\n")}")
+    end
+
+  when "job:summary"
+    begin
+      job = getJobById(ARGV[1])
+      daily_totals = Hash.new(0)
+      job["entries"].each do |entry|
+        day = Time.at(entry["start"]).strftime("%d.%m.%Y")
+        daily_totals[day] += entry["total"]
+      end
+      summary_lines = daily_totals.map { |date, total| "#{date}: #{format_duration(total)}" }
+      alert(summary_lines.join("\n"), title: t("prompt.job.daily_summary.title", {jobname: job["name"]}))
+    rescue => error
+      alert("#{t("error.job:summary")} \n#{error.message}\n#{error.backtrace.join("\n")}")
     end
 
   when "entry:delete"
