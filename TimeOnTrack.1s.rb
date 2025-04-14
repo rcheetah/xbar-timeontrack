@@ -40,6 +40,7 @@ $ICON = {
 
 $EXT_DIR = "./TimeOnTrack/"
 $SAVEFILE = "#{$EXT_DIR}TimeOnTrackData.json"
+$ARCHIVEFILE = "#{$EXT_DIR}TimeOnTrackArchive.json"
 $LANG_DIR = "#{$EXT_DIR}lang/"
 $LANG_FALLBACK = "en_US"
 $FONT_MENU = "font='PTMono-Bold' size=13"
@@ -162,13 +163,18 @@ end
 
 # Getters
 
-def getJobById(id)
+def getJobById(id, include_archived: false)
   begin
-    return $data["jobs"].find { |job| job["id"] == id }
+    job = $data["jobs"].find { |job| job["id"] == id }
+    return job if job
+    if include_archived
+      archive_data = JSON.parse(File.read($ARCHIVEFILE))
+      return archive_data["jobs"].find { |job| job["id"] == id }
+    end
   rescue => error
     alert("#{t("error.getJobById", {id: id})}: \n#{error.message}\n#{error.backtrace.join("\n")}")
-    return nil
   end
+  return nil
 end
 
 def getActiveJob()
@@ -176,17 +182,23 @@ def getActiveJob()
   return getJobById($data["activeJob"])
 end
 
-def getEntryById(id)
+def getEntryById(id, include_archived: false)
   begin
     $data["jobs"].each do |job|
       entry = job["entries"].find { |entry| entry["id"] == id }
       return entry if entry
     end
-    return nil
+    if include_archived
+      archive_data = JSON.parse(File.read($ARCHIVEFILE))
+      archive_data["jobs"].each do |job|
+        entry = job["entries"].find { |entry| entry["id"] == id }
+        return entry if entry
+      end
+    end
   rescue => error
     alert("#{t("error.getEntryById")} \n#{error.message}\n#{error.backtrace.join("\n")}")
-    return nil
   end
+  return nil
 end
 
 # Main Functions
@@ -262,7 +274,7 @@ def generateJournal()
 
   tmpl_journal_dom = "<!DOCTYPE html><html lang='de'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>#{t("journal.title")}</title><style>body{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;} #main{ max-width: 1200px; margin: 0 auto;} .jobs{flex-direction:column;display:flex;gap:.5rem} .job { background-color: lightgrey; padding: 1rem; border-radius: 0.25rem; margin: 0.5rem;}</style></head><body><div id='main'><h1>📖 TimeOnTrack Journal</h1><h2>#{t("journal.jobs.active")}</h2><div id='jobs-active' class='jobs'>%%JOBS_ACTIVE%% </div><h2>#{t("journal.jobs.archived")}</h2><div id='jobs-archived' class='jobs'>%%JOBS_ARCHIVED%% </div></div></body></html>"
   active = $data["jobs"].select { |job| !job["archived"] }
-  archived = $data["jobs"].select { |job| job["archived"] }
+  archived = JSON.parse(File.read($ARCHIVEFILE))["jobs"]
 
   active_doms = []
   active.each do |job|
@@ -288,19 +300,23 @@ end
 def loadJSON()
   if File.exist?($SAVEFILE)
     $data = JSON.parse(File.read($SAVEFILE))
-    # puts "Loaded data: \n#{$data}"
   else
-    $data = $EMPTY_DATA;
+    $data = $EMPTY_DATA
   end
 
-  # Recalculate Totals and save job id with entry
+  if !File.exist?($ARCHIVEFILE)
+    FileUtils.mkpath(File.dirname($ARCHIVEFILE))
+    File.write($ARCHIVEFILE, JSON.pretty_generate({ "jobs" => [] }))
+  end
+
+  # Recalculate totals for active jobs
   $data["jobs"].each do |job|
-    total_time = job["entries"].reduce(0) { |sum, entry| sum + (entry["end"] - entry["start"]) }
+    total_time = job["entries"].sum { |entry| entry["end"] - entry["start"] }
     job["total"] = total_time
-    job["entries"].each { |entry|
+    job["entries"].each do |entry|
       entry["total"] = entry["end"] - entry["start"]
-      entry["job_id"] = "#{job["id"]}"
-    }
+      entry["job_id"] = job["id"]
+    end
   end
 end
 
@@ -436,11 +452,16 @@ def actionHandler()
     begin
       job = getJobById(ARGV[1])
       job["archived"] = true
-      active_job = getActiveJob();
-      active_entry = getEntryById($data["activeEntry"]) if $data["activeEntry"]
-      $data["activeJob"] = nil if active_job && job["id"] == active_job["id"]
-      $data["activeEntry"] = nil if active_entry && job["id"] == active_entry["job_id"]
+      $data["jobs"].reject! { |j| j["id"] == job["id"] }
 
+      archive_data = JSON.parse(File.read($ARCHIVEFILE))
+      archive_data["jobs"] << job
+      File.write($ARCHIVEFILE, JSON.pretty_generate(archive_data))
+
+      if $data["activeJob"] == job["id"]
+        $data["activeJob"] = nil
+        $data["activeEntry"] = nil
+      end
     rescue => error
       alert("#{t("error.job:archive")} \n#{error.message}\n#{error.backtrace.join("\n")}")
     end
@@ -450,7 +471,7 @@ def actionHandler()
       job = getJobById(ARGV[1])
       confirmed = yes_no_prompt(t("prompt.job.delete.message", {jobname: job["name"]}), title: t("prompt.job.delete.title"))
       return unless confirmed
-      active_job = getActiveJob();
+      active_job = getActiveJob()
       active_entry = getEntryById($data["activeEntry"]) if $data["activeEntry"]
       $data["activeJob"] = nil if active_job && job["id"] == active_job["id"]
       $data["activeEntry"] = nil if active_entry && job["id"] == active_entry["job_id"]
