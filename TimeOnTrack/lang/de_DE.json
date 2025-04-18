@@ -22,6 +22,8 @@
     "prompt.job.delete.message": "Soll „%{jobname}“ wirklich gelöscht werden? \nDie Daten sind danach für immer verloren. Der Job kann auch archiviert werden, um ihn nicht mehr in der Liste zu sehen. Dann würde er im Journal aufrufbar bleiben.",
     "prompt.job.delete.title": "Job wirklich löschen?",
     "prompt.job.daily_summary.title": "Zusammenfassung: %{jobname}",
+    "prompt.job.daily_summary.button.ok": "OK",
+    "prompt.job.daily_summary.button.archive": "Job archivieren",
     "prompt.entry.delete.message": "Soll der Eintrag mit %{duration} zum Job %{jobname} wirklich gelöscht werden?",
     "prompt.entry.delete.title": "Eintrag wirklich löschen?",
     "prompt.entry.edit.message": "Bitte ändere die Daten wie gewünscht (Startzeit | Dauer), aber lasse das Format unbedingt gleich!",

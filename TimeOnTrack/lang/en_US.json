@@ -22,6 +22,8 @@
     "prompt.job.delete.message": "Are you sure you want to delete “%{jobname}”? \nThe data will be lost forever. You can also archive the job so it won’t appear in the list but will still be accessible in the journal.",
     "prompt.job.delete.title": "Really delete job?",
     "prompt.job.daily_summary.title": "Summary: %{jobname}",
+    "prompt.job.daily_summary.button.ok": "OK",
+    "prompt.job.daily_summary.button.archive": "Archive job",
     "prompt.entry.delete.message": "Are you sure you want to delete the entry with %{duration} for the job %{jobname}?",
     "prompt.entry.delete.title": "Really delete entry?",
     "prompt.entry.edit.message": "Please adjust the data as needed (Start time | Duration), but make sure to keep the format the same!",

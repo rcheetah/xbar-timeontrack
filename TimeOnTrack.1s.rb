@@ -94,6 +94,22 @@ def alert(text, title: "")
   `osascript -e '#{script}'`
 end
 
+# Dialog with multiple buttons
+def show_dialog(text, title: "", buttons: ["OK"])
+  buttons_list = buttons.reverse.map { |b| "\"#{b}\"" }.join(", ") # macOS erwartet Buttons in umgekehrter Reihenfolge
+  default_button = buttons.length
+  script = <<~SCRIPT
+    tell application "System Events"
+      activate
+      display dialog "#{text}" with title "#{title}" buttons {#{buttons_list}} default button #{default_button}
+      button returned of result
+    end tell
+  SCRIPT
+  result = `osascript -e '#{script}' 2>/dev/null`
+  return nil if $?.exitstatus != 0
+  return result.strip
+end
+
 
 # Helpers
 
@@ -236,6 +252,20 @@ end
 def deleteEntry(id)
   $data["jobs"].each do |job|
     job["entries"] = job["entries"].reject { |entry| entry["id"] == ARGV[1] }
+  end
+end
+
+def archiveJob(job)
+  job["archived"] = true
+  $data["jobs"].reject! { |j| j["id"] == job["id"] }
+
+  archive_data = JSON.parse(File.read($ARCHIVEFILE))
+  archive_data["jobs"] << job
+  File.write($ARCHIVEFILE, JSON.pretty_generate(archive_data))
+
+  if $data["activeJob"] == job["id"]
+    $data["activeJob"] = nil
+    $data["activeEntry"] = nil
   end
 end
 
@@ -449,22 +479,8 @@ def actionHandler()
     end
 
   when "job:archive"
-    begin
-      job = getJobById(ARGV[1])
-      job["archived"] = true
-      $data["jobs"].reject! { |j| j["id"] == job["id"] }
-
-      archive_data = JSON.parse(File.read($ARCHIVEFILE))
-      archive_data["jobs"] << job
-      File.write($ARCHIVEFILE, JSON.pretty_generate(archive_data))
-
-      if $data["activeJob"] == job["id"]
-        $data["activeJob"] = nil
-        $data["activeEntry"] = nil
-      end
-    rescue => error
-      alert("#{t("error.job:archive")} \n#{error.message}\n#{error.backtrace.join("\n")}")
-    end
+    job = getJobById(ARGV[1])
+    archiveJob(job)
 
   when "job:delete"
     begin
@@ -490,7 +506,10 @@ def actionHandler()
         daily_totals[day] += entry["total"]
       end
       summary_lines = daily_totals.map { |date, total| "#{date}: #{format_duration(total)}" }
-      alert(summary_lines.join("\n"), title: t("prompt.job.daily_summary.title", {jobname: job["name"]}))
+      result = show_dialog(summary_lines.join("\n"), title: t("prompt.job.daily_summary.title", {jobname: job["name"]}), buttons: [t("prompt.job.daily_summary.button.ok"), t("prompt.job.daily_summary.button.archive")])
+      if result == t("prompt.job.daily_summary.button.archive")
+        archiveJob(job)
+      end
     rescue => error
       alert("#{t("error.job:summary")} \n#{error.message}\n#{error.backtrace.join("\n")}")
     end
@@ -531,7 +550,6 @@ def actionHandler()
 
   when "entry:rename"
     begin
-      # TODO
       entry = getEntryById(ARGV[1])
       job = getJobById(entry["job_id"])
 
