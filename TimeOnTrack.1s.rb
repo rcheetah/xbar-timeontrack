@@ -388,7 +388,7 @@ def buildMenu()
   # Visual Divider
   puts "---"
 
-  $data["jobs"].each do |job|
+  $data["jobs"].sort_by { |job| job["name"].to_s.downcase }.each do |job|
     next if job["archived"]
     if $data["activeEntry"]
       job_is_tracking = getEntryById($data["activeEntry"])["job_id"] == job["id"] ? true : false
