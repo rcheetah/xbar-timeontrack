@@ -38,10 +38,10 @@ $ICON = {
 }
 
 
-$EXT_DIR = "./TimeOnTrack/"
-$SAVEFILE = "#{$EXT_DIR}TimeOnTrackData.json"
-$ARCHIVEFILE = "#{$EXT_DIR}TimeOnTrackArchive.json"
-$LANG_DIR = "#{$EXT_DIR}lang/"
+$EXT_DIR = File.join(__dir__, "TimeOnTrack")
+$SAVEFILE = File.join($EXT_DIR, "TimeOnTrackData.json")
+$ARCHIVEFILE = File.join($EXT_DIR, "TimeOnTrackArchive.json")
+$LANG_DIR = File.join($EXT_DIR, "lang")
 $LANG_FALLBACK = "en_US"
 $FONT_MENU = "font='PTMono-Bold' size=13"
 $EMPTY_DATA = {
@@ -162,7 +162,7 @@ def run_command(command, parameters = [])
   return cmd_string
 end
 
-def format_duration(timestamp, enforce_hours=false)
+def format_duration(timestamp, enforce_hours=false, hide_seconds=false)
   total_hours = timestamp / 3600
   minutes = (timestamp % 3600) / 60
   seconds = timestamp % 60
@@ -173,9 +173,10 @@ def format_duration(timestamp, enforce_hours=false)
     string += "#{total_hours}:"
   end
   string += "#{minutes.to_s.rjust(2,'0')}"
-  string += ":#{seconds.to_s.rjust(2,'0')}"
+  string += ":#{seconds.to_s.rjust(2,'0')}" unless hide_seconds
   return string
 end
+
 
 # Getters
 
@@ -335,7 +336,7 @@ def loadJSON()
   end
 
   if !File.exist?($ARCHIVEFILE)
-    FileUtils.mkpath(File.dirname($ARCHIVEFILE))
+    FileUtils.mkpath($EXT_DIR)
     File.write($ARCHIVEFILE, JSON.pretty_generate({ "jobs" => [] }))
   end
 
@@ -351,7 +352,7 @@ def loadJSON()
 end
 
 def saveJSON()
-  FileUtils.mkpath(File.dirname($SAVEFILE))
+  FileUtils.mkpath($EXT_DIR)
   File.write($SAVEFILE, JSON.pretty_generate($data))
 end
 
@@ -501,12 +502,34 @@ def actionHandler()
     begin
       job = getJobById(ARGV[1])
       daily_totals = Hash.new(0)
+
       job["entries"].each do |entry|
-        day = Time.at(entry["start"]).strftime("%d.%m.%Y")
+        day = Time.at(entry["start"]).strftime("%Y-%m-%d")
         daily_totals[day] += entry["total"]
       end
-      summary_lines = daily_totals.map { |date, total| "#{date}: #{format_duration(total)}" }
-      result = show_dialog(summary_lines.join("\n"), title: t("prompt.job.daily_summary.title", {jobname: job["name"]}), buttons: [t("prompt.job.daily_summary.button.ok"), t("prompt.job.daily_summary.button.archive")])
+
+      total_diff = 0
+
+      summary_lines = daily_totals.map do |date, total|
+        # 15 minutes = 900 seconds
+        rounded_total = (total / 900.0).round * 900
+        total_diff += (total - rounded_total)
+        "#{date}: #{format_duration(total)} (≈ #{format_duration(rounded_total, false, true)})"
+      end
+
+      diff_sign = total_diff < 0 ? "-" : "+"
+      formatted_diff = "#{diff_sign}#{format_duration(total_diff.abs)}"
+
+      total_rounded = (job["total"] / 900.0).round * 900
+      total_line = "—\n#{t("summary.total")} #{format_duration(job["total"])} (≈ #{format_duration(total_rounded, false, true)})\nRest: #{formatted_diff}"
+
+      dialog_text = summary_lines.join("\n") + "\n" + total_line
+      result = show_dialog(
+        dialog_text,
+        title: t("prompt.job.daily_summary.title", {jobname: job["name"]}),
+        buttons: [t("prompt.job.daily_summary.button.ok"), t("prompt.job.daily_summary.button.archive")]
+      )
+
       if result == t("prompt.job.daily_summary.button.archive")
         archiveJob(job)
       end

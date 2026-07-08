@@ -42,6 +42,8 @@
     "journal.job.duration": "Dauer",
     "journal.job.duration.to": "bis",
     "journal.job.entries.emptystate": "Keine Einträge",
+    "summary.total": "Gesamt:",
+    "summary.remainder": "Rest",
     "error.getJobById": "Job %{id} konnte nicht gefunden werden",
     "error.getEntryById": "Fehler beim Zugriff auf den aktiven Eintrag. Fehlerausgabe:",
     "error.job:pause": "Konnte Job nicht pausieren:",
