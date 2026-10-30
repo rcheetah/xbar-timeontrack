@@ -30,7 +30,6 @@
 require 'json'
 require 'securerandom'
 require 'time'
-require 'tmpdir'
 require 'fileutils'
 require 'shellwords'
 
@@ -670,8 +669,12 @@ def actionHandler()
   case ARGV[0]
 
   when "job:pause"
-    updateRunningTimer()
-    $data["activeEntry"] = nil
+    begin
+      updateRunningTimer()
+      $data["activeEntry"] = nil
+    rescue => error
+      alert("#{t("error.job:pause")} \n#{error.message}\n#{error.backtrace.join("\n")}")
+    end
 
   when "job:start"
     begin
@@ -683,9 +686,13 @@ def actionHandler()
     end
 
   when "job:stop"
-    updateRunningTimer()
-    $data["activeJob"] = nil
-    $data["activeEntry"] = nil
+    begin
+      updateRunningTimer()
+      $data["activeJob"] = nil
+      $data["activeEntry"] = nil
+    rescue => error
+      alert("#{t("error.job:stop")} \n#{error.message}\n#{error.backtrace.join("\n")}")
+    end
 
   when "job:new"
     begin
@@ -711,8 +718,12 @@ def actionHandler()
     end
 
   when "job:archive"
-    job = getJobById(ARGV[1])
-    archiveJob(job)
+    begin
+      job = getJobById(ARGV[1])
+      archiveJob(job)
+    rescue => error
+      alert("#{t("error.job:archive")} \n#{error.message}\n#{error.backtrace.join("\n")}")
+    end
 
   when "job:delete"
     begin
@@ -752,7 +763,7 @@ def actionHandler()
       formatted_diff = "#{diff_sign}#{format_duration(total_diff.abs)}"
 
       total_rounded = (job["total"] / 900.0).round * 900
-      total_line = "—\n#{t("summary.total")} #{format_duration(job["total"])} (≈ #{format_duration(total_rounded, false, true)})\nRest: #{formatted_diff}"
+      total_line = "—\n#{t("summary.total")} #{format_duration(job["total"])} (≈ #{format_duration(total_rounded, false, true)})\n#{t("summary.remainder")}: #{formatted_diff}"
 
       dialog_text = summary_lines.join("\n") + "\n" + total_line
       result = show_dialog(

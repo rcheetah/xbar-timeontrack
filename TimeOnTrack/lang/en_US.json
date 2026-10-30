@@ -1,5 +1,4 @@
 {
-    "plugin_title_bar": "TimeOnTrack",
     "job.continue": "Continue %{jobname}",
     "job.pause": "Pause %{jobname}",
     "job.stop": "Stop %{jobname}",
@@ -81,9 +80,11 @@
     "error.getJobById": "Job %{id} could not be found",
     "error.getEntryById": "Error when accessing active entry. This is the error:",
     "error.job:pause": "Could not pause job:",
+    "error.job:stop": "Could not stop job:",
     "error.job:new": "Could not create new job:",
     "error.job:rename": "Could not rename job:",
     "error.job:archive": "Could not archive job:",
+    "error.job:summary": "Could not build summary:",
     "error.job:delete": "Could not delete job:",
     "error.entry:delete": "Could not delete entry:",
     "error.entry:edit": "Could not edit entry:",
