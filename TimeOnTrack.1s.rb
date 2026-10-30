@@ -104,15 +104,39 @@ $data = nil
 
 
 # Prompts
+#
+# All of these hand user-supplied text to osascript as ARGV rather than interpolating it
+# into the AppleScript source. Interpolation was the cause of two failures:
+#
+#   * Encoding. osascript's output is tagged with Ruby's default external encoding, which
+#     is US-ASCII when LANG is unset — as it is for a GUI-launched app. `.strip` on a
+#     US-ASCII string containing an umlaut raises Encoding::CompatibilityError, so naming a
+#     job "Büro" aborted the action and the job was silently never created.
+#   * Quoting. A `"` in the text broke the AppleScript literal, and a `'` could break the
+#     surrounding shell string.
+#
+# Passing values via argv sidesteps both: the script text stays pure ASCII and the values
+# never travel through the shell.
+
+def run_osascript(script, *args)
+  # Read as UTF-8 regardless of locale, then scrub defensively so a malformed byte can
+  # never take down an action.
+  out = IO.popen(["osascript", "-e", script, "--", *args.map(&:to_s)],
+                 external_encoding: Encoding::UTF_8, err: File::NULL, &:read)
+  return nil unless $?.success?
+  return out.to_s.force_encoding(Encoding::UTF_8).scrub
+end
 
 def prompt(text, title: "", input: "")
   script = <<~SCRIPT
-    tell application "System Events"
-      text returned of (display dialog "#{text}" with title "#{title}" default answer "#{input}")
-    end tell
+    on run argv
+      tell application "System Events"
+        text returned of (display dialog (item 1 of argv) with title (item 2 of argv) default answer (item 3 of argv))
+      end tell
+    end run
   SCRIPT
-  result = `osascript -e '#{script}' 2>/dev/null`
-  return nil if $?.exitstatus != 0 # Return nil if the user canceled
+  result = run_osascript(script, text, title, input)
+  return nil if result.nil? # user canceled, or osascript failed
   return result.strip
 end
 
@@ -120,41 +144,51 @@ def yes_no_prompt(text, title: "")
   yes = t("prompt.yes")
   no = t("prompt.no")
   script = <<~SCRIPT
-    tell application "System Events"
-      display dialog "#{text}" with title "#{title}" buttons {"#{no}", "#{yes}"} default button "#{yes}"
-      if button returned of result is "#{yes}" then
-        return true
-      else
-        return false
-      end if
-    end tell
+    on run argv
+      tell application "System Events"
+        display dialog (item 1 of argv) with title (item 2 of argv) buttons {item 3 of argv, item 4 of argv} default button (item 4 of argv)
+        if button returned of result is (item 4 of argv) then
+          return "true"
+        else
+          return "false"
+        end if
+      end tell
+    end run
   SCRIPT
-  result = `osascript -e '#{script}'`.strip
-  return result == "true"
+  result = run_osascript(script, text, title, no, yes)
+  return result.to_s.strip == "true"
 end
 
 def alert(text, title: "")
   script = <<~SCRIPT
-    tell application "System Events"
-      display dialog "#{text}" with title "#{title}" buttons {"OK"} default button "OK"
-    end tell
+    on run argv
+      tell application "System Events"
+        display dialog (item 1 of argv) with title (item 2 of argv) buttons {"OK"} default button "OK"
+      end tell
+    end run
   SCRIPT
-  `osascript -e '#{script}'`
+  run_osascript(script, text, title)
 end
 
 # Dialog with multiple buttons
 def show_dialog(text, title: "", buttons: ["OK"])
-  buttons_list = buttons.reverse.map { |b| "\"#{b}\"" }.join(", ") # macOS erwartet Buttons in umgekehrter Reihenfolge
-  default_button = buttons.length
+  # macOS expects the buttons in reverse order. The default button must be given as an
+  # item reference: a bare number is a *button index* and silently fails with a
+  # "-50: button does not exist" error when it exceeds the button count.
+  reversed = buttons.reverse
+  button_items = reversed.each_index.map { |i| "(item #{i + 3} of argv)" }.join(", ")
+  default_item = reversed.length + 2 # last reversed button == first of `buttons`
   script = <<~SCRIPT
-    tell application "System Events"
-      activate
-      display dialog "#{text}" with title "#{title}" buttons {#{buttons_list}} default button #{default_button}
-      button returned of result
-    end tell
+    on run argv
+      tell application "System Events"
+        activate
+        display dialog (item 1 of argv) with title (item 2 of argv) buttons {#{button_items}} default button (item #{default_item} of argv)
+        button returned of result
+      end tell
+    end run
   SCRIPT
-  result = `osascript -e '#{script}' 2>/dev/null`
-  return nil if $?.exitstatus != 0
+  result = run_osascript(script, text, title, *reversed)
+  return nil if result.nil?
   return result.strip
 end
 

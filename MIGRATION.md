@@ -100,6 +100,7 @@ knowing before anyone "simplifies" it back.
 | Bug | Effect |
 |---|---|
 | `disabled=true` (see above) | Tracking-state entries were not actually disabled in SwiftBar |
+| Dialog text interpolated into AppleScript | **A job name containing an umlaut was silently never created** (see below) |
 | Second `|` in menu lines (see above) | **Every** action parameter was mis-parsed, so menu items rendered but did nothing when clicked |
 | Descriptive tags renamed to `swiftbar.*` | Metadata unread; About pane and Plugin Variables section were blank |
 | Unquoted `<swiftbar.var>` defaults | Var regex never matched, so variables stayed hidden in the UI |
@@ -114,7 +115,23 @@ knowing before anyone "simplifies" it back.
 | UTF-8 not forced when reading JSON | With `LANG` unset Ruby reads as US-ASCII and **raises** on translated language files |
 | `loadJSON` assumed `$data["jobs"]` exists | An empty or hand-edited data file crashed the plugin |
 
-### Performance work
+### Umlauts in dialog input (pre-existing bug, finally fixed)
+
+The original plugin never accepted non-ASCII characters in its dialogs. Typing an umlaut —
+"Büro" — aborted the action and the job was *silently* not created: no error, no dialog, just
+nothing. Easy to miss and then wonder why no clock was running.
+
+The cause was encoding, not typing. osascript's output is tagged with Ruby's default external
+encoding, which is **US-ASCII whenever `LANG` is unset** — the normal state for an app launched
+from the Finder/Dock rather than a terminal. `strip` on a US-ASCII string that contains an
+umlaut raises `Encoding::CompatibilityError`, and the old code let that propagate out of the
+action handler.
+
+The dialogs now pass every user-facing string to osascript as an argv argument
+(`on run argv` + `osascript -e <script> -- <args>`), and the pipe is read explicitly as UTF-8
+with a defensive `scrub`. That fixes the encoding crash and, as a bonus, the quoting bug where
+a `"` in the text produced an AppleScript syntax error.
+
 
 The archive file can be ~1 MB (hundreds of archived jobs) and was parsed on *every one of the
 86,400 daily runs*, even though only the journal needs it. It is now parsed lazily. Measured

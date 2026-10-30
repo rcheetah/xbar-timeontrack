@@ -157,6 +157,26 @@ var-tag regex accepts both prefixes).
 Because action mode has no plugin environment, the language is persisted in
 `$data["language"]` and read back from there.
 
+### Dialog text goes through argv, never interpolation
+
+`prompt`, `yes_no_prompt`, `alert` and `show_dialog` all build an AppleScript with
+`on run argv` and hand the user-facing strings in as arguments via
+`IO.popen(["osascript", "-e", script, "--", *args], external_encoding: Encoding::UTF_8)`.
+Two reasons, both bugs that existed in the original xbar plugin:
+
+- **Encoding.** osascript's output is tagged with Ruby's *default external* encoding, which
+  is US-ASCII when `LANG` is unset — the normal state for a GUI-launched app. Calling
+  `.strip` on a US-ASCII string containing an umlaut raises `Encoding::CompatibilityError`,
+  which aborted the action. Naming a job "Büro" silently created nothing at all. Reading the
+  pipe as UTF-8 fixes it; `run_osascript` also `.scrub`s so a stray byte cannot kill an
+  action. Any new subprocess output should be handled the same way.
+- **Quoting.** Interpolated `"` broke the AppleScript source (a hard syntax error) and `'`
+  could break the surrounding shell string.
+
+Keep the script body pure ASCII and pass values as argv. Note that `default button` takes an
+item reference (`(item 4 of argv)`), not a bare number — a number is a *button index*, and an
+out-of-range one fails with "-50: button does not exist".
+
 ### Icons must be template images
 
 `icon()` emits `templateImage=`, never `image=`. A template image is recoloured by macOS to
