@@ -33,6 +33,8 @@
     "prompt.entry.rename": "Bennene den Eintrag von „%{jobname}“ mit der Dauer von %{duration}:",
     "prompt.savefile.edit.message": "Wenn die Speicherdatei direkt bearbeitet wird, kann sie dabei ungültig werden! Verwende diese Funktion nur, wenn du genau weißt was du tust – und sei dabei vorsichtig. \nMöchtest du die Datei wirklich öffnen?",
     "prompt.savefile.edit.title": "ACHTUNG!",
+    "prompt.yes": "Ja",
+    "prompt.no": "Nein",
     "journal.title": "TimeOnTrack Journal",
     "journal.jobs.active": "Aktive Jobs",
     "journal.jobs.archived": "Archivierte Jobs",

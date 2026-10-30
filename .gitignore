@@ -38,3 +38,11 @@ Temporary Items
 
 
 private
+
+# Personal tracking data. Lives in SwiftBar's per-plugin data directory
+# (SWIFTBAR_PLUGIN_DATA_PATH), which falls back to TimeOnTrack/ in a bare checkout.
+TimeOnTrack/TimeOnTrackData.json
+TimeOnTrack/TimeOnTrackArchive.json
+
+# Scratch seed data
+tmp/
