@@ -99,7 +99,7 @@ $DATA_DIR   = ENV["SWIFTBAR_PLUGIN_DATA_PATH"]        # only if it is a real, se
 
 Sections are marked with comments; keep new code inside the matching section.
 
-1. **Metadata** — the commented `<swiftbar.*>` header SwiftBar parses. Also holds
+1. **Metadata** — the commented header SwiftBar parses. Also holds
    `swiftbar.var` declarations (currently `VAR_LANGUAGE_OVERRIDE`).
 2. **Constants** — `$ICON` (base64 SVGs), paths, `$FONT_MENU`, `$EMPTY_DATA`.
 3. **Prompts** — AppleScript dialogs (`prompt`, `yes_no_prompt`, `alert`, `show_dialog`).
@@ -125,16 +125,54 @@ whether it was passed arguments:
 Menu items trigger actions by re-invoking the script itself:
 
 ```
-| shell="<path>" param1=job:start param2="<uuid>" terminal=false
+Neuer Job | refresh=true shell="<path>" param1=job:new terminal=false
 ```
 
-`run_command` builds that. SwiftBar collects every `param*` key into argv, so in the shell
-script `ARGV[0]` is `job:start`, `ARGV[1]` is the uuid, etc. SwiftBar has no `disabled=`
-parameter — a line with **no action at all** is rendered greyed out. That is how the
-"already tracking" entries are disabled; do not reintroduce `disabled=true`.
+`run_command` builds the `shell=`/`param*`/`terminal=` part. SwiftBar collects every `param*`
+key into argv, so in the shell script `ARGV[0]` is `job:new`, `ARGV[1]` is the uuid, etc.
+SwiftBar has no `disabled=` parameter — a line with **no action at all** is rendered greyed
+out. That is how the "already tracking" entries are disabled; do not reintroduce
+`disabled=true`.
+
+### Two output-format traps (both were real bugs here)
+**1. Only the FIRST `|` separates title from parameters.** SwiftBar's parser
+(`MenuLineParameters.init`) splits on the first `|` and then treats everything after it as a
+space-separated parameter list. Emitting a second `|` — which the old xbar-style output did,
+e.g. `title | refresh=true | shell=... | templateImage=...` — makes `"| shell"` and
+`"| templateimage"` the *keys*, so `bash` resolves to nil and **the menu item does nothing**.
+It fails silently: the item renders, it just isn't clickable. All line building therefore goes
+through `menu_line(title, *params)`, and the helpers (`icon`, `run_command`) return bare
+`key="value"` fragments with no leading `|`. Do not hand-concatenate a `|` into a line.
+
+**2. Descriptive metadata tags must use the `xbar.` prefix, not `swiftbar.`.** In
+`PluginMetadata.swift` the `optionType` for `title/version/author/github/desc/image/
+dependencies/about` is `[.bitbar, .xbar]` — *not* `.swiftbar`. Writing `<swiftbar.title>`
+parses to nothing and leaves the About pane in SwiftBar's preferences blank, including the
+Plugin Variables section (so `VAR_DEV_MODE` never appears). Only SwiftBar's own additions use
+`swiftbar.`: `hideAbout`, `hideRunInTerminal`, `hideLastUpdated`, `hideDisablePlugin`,
+`hideSwiftBar`, `schedule`, `type`, `environment`, `runInBash`, `refreshOnOpen`,
+`collapseOnClose`, `persistentWebView`, `alwaysVisible`. `<swiftbar.var>` *is* correct (the
+var-tag regex accepts both prefixes).
 
 Because action mode has no plugin environment, the language is persisted in
 `$data["language"]` and read back from there.
+
+### Icons must be template images
+
+`icon()` emits `templateImage=`, never `image=`. A template image is recoloured by macOS to
+match its context — white on a dark menu bar, black on a light one — so it stays legible in
+both appearances. `image=` renders the literal colour baked into the SVG instead, so an icon
+whose SVG is black stays black and disappears against a dark dropdown. (This is exactly what
+happened to the record dot: it was passed `preserve_color=true` and rendered black on a dark
+menu.) There is no longer any reason to use `image=` here.
+
+### The title line must not carry `refresh=true`
+
+SwiftBar routes a click by what the *title* line declares. A title line with `refresh` but no
+`bash` is treated as its own action (`routeForBarItemClick` → `.runTitleAction`), so a plain
+left click just re-runs the plugin and **the dropdown never opens** — you end up needing a
+right click, which always opens the menu. The plugin already ticks every second, so the
+refresh was pointless anyway. Leave the header line free of action parameters.
 
 ## Conventions
 

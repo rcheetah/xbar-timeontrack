@@ -12,17 +12,21 @@ since the README omits several behaviours that the code implements.
 
 ### Metadata and variables
 
-All tags are now `<swiftbar.*>`. SwiftBar parses `<xbar.*>` too, but there is no reason to
-keep the old prefix. `<swiftbar.var>` replaces `<xbar.var>` — SwiftBar accepts both with the
-same syntax, and stores user values in a `<plugin>.vars.json` beside the plugin.
-
-Added:
+The descriptive tags keep the **`xbar.` prefix**: `title`, `version`, `author`,
+`author.github`, `desc`, `image`, `dependencies`, `abouturl`. In SwiftBar's
+`PluginMetadata.swift` these are typed `[.bitbar, .xbar]` — *not* `.swiftbar`. Only
+SwiftBar's own additions use `swiftbar.`:
 
 - `<swiftbar.hideLastUpdated>true</swiftbar.hideLastUpdated>` — at a 1-second refresh the
   "last updated" row is noise.
 - `<swiftbar.refreshOnOpen>true</swiftbar.refreshOnOpen>` — the menu is current when clicked.
 - `<swiftbar.runInBash>false</swiftbar.runInBash>` — SwiftBar wraps plugins in bash by
   default; this is a shebanged Ruby script, so the wrapper is pointless work.
+
+An earlier revision of this migration renamed *everything* to `swiftbar.*`, which silently
+blanked the About pane and the Plugin Variables UI. `<swiftbar.var>` remains correct — the
+var-tag regex accepts both prefixes, and user values are stored in `<plugin>.vars.json`
+beside the plugin.
 
 ### Menu output
 
@@ -35,7 +39,24 @@ action, so the "already tracking" entries are now printed with no action paramet
 -- Continue                                                                  # greyed out
 ```
 
-The `shell=` / `param1=` / `terminal=false` / `refresh=true` parameters are unchanged —
+**The `|` separator was also wrong, and this one was worse.** SwiftBar splits a line on the
+**first** `|` only, then parses the remainder as a space-separated parameter list. The old
+output had a `|` before *every* parameter:
+
+```
+New Job | refresh=true | shell="..." param1=job:new | templateImage="..."   # broken
+```
+
+which makes `"| shell"` and `"| templateimage"` the parameter keys, so `bash` resolves to nil.
+Every menu item rendered but **did nothing when clicked** — a silent failure, not an error.
+All lines are now built by a single `menu_line(title, *params)` helper, with parameters
+separated by spaces:
+
+```
+New Job | refresh=true shell="..." param1=job:new terminal=false templateImage="..."
+```
+
+The `shell=` / `param1=` / `terminal=false` / `refresh=true` parameter *names* are unchanged —
 SwiftBar reads `params["bash"] ?? params["shell"]` and collects every `param*` key.
 
 ### Path resolution
@@ -79,7 +100,12 @@ knowing before anyone "simplifies" it back.
 | Bug | Effect |
 |---|---|
 | `disabled=true` (see above) | Tracking-state entries were not actually disabled in SwiftBar |
+| Second `|` in menu lines (see above) | **Every** action parameter was mis-parsed, so menu items rendered but did nothing when clicked |
+| Descriptive tags renamed to `swiftbar.*` | Metadata unread; About pane and Plugin Variables section were blank |
+| Unquoted `<swiftbar.var>` defaults | Var regex never matched, so variables stayed hidden in the UI |
 | `icon("running")` — not a key in `$ICON` | Emitted `templateImage=""`; the "currently tracking" marker never rendered. Now uses the existing `rec` icon |
+| The `rec` marker used `image=` (colour-preserving) | Rendered the SVG's literal black, so the dot vanished against a dark dropdown while every other icon turned white. All icons are now template images |
+| Title line carried `refresh=true` with no `bash` | SwiftBar treated left click as that action, so the dropdown opened **only on right click** |
 | Shared-string mutation in `generateJournalJobDom` | `row = template` then `gsub!` mutated the template, so **every journal row repeated the first entry's data** |
 | `deleteJob` / `deleteEntry` read `ARGV[1]` instead of their argument | Worked by accident; now uses the parameter |
 | `yes_no_prompt` hardcoded German buttons | English users saw "Ja"/"Nein" |

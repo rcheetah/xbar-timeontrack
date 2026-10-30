@@ -93,14 +93,36 @@ Language files are stored in the `TimeOnTrack/lang/` directory. You can create y
 ## Developer mode
 
 To run a second copy — for example the plugin from a checkout you are editing, next to a
-stable one — turn on **dev mode** in the plugin settings (`VAR_DEV_MODE`). It does two things:
+stable one — turn on **dev mode**. It does two things:
 
 - **Separate data.** Tracked time goes to a `dev/` subdirectory instead of the main one, so
   the two copies never write to the same file.
 - **Visible marker.** The menu bar item is prefixed with `DEV ` and tinted amber, and the
   dropdown gains a banner showing which data directory this copy writes to.
 
-Running from a shell, set `SWIFTBAR_TIMEONTRACK_DEV=1` instead of the setting.
+There are three ways to switch it on, in order of convenience:
+
+**1. SwiftBar's settings UI.** SwiftBar ▸ *Settings* ▸ *Plugins* ▸ TimeOnTrack ▸
+**Plugin Variables** ▸ set `VAR_DEV_MODE` to on. (If that section is empty, see the note
+below.)
+
+**2. The vars file**, written next to the plugin:
+
+```bash
+# ~/Library/Application Support/swiftbar/plugins/TimeOnTrack.1s.rb.vars.json
+{ "VAR_DEV_MODE": "true" }
+```
+
+**3. The environment**, for running from a shell — this does not work for the plugin as
+launched by SwiftBar, only for your own test runs:
+
+```bash
+SWIFTBAR_TIMEONTRACK_DEV=1 ruby TimeOnTrack.1s.rb
+```
+
+> **If the Plugin Variables section is empty**, the plugin's metadata is not being read —
+> SwiftBar only reads the descriptive tags with the `xbar.` prefix (`<xbar.title>`, and so
+> on), not `swiftbar.`. Reload the plugin after editing metadata.
 
 ## Migrating from xbar
 

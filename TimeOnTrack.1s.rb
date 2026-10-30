@@ -1,21 +1,30 @@
 #!/usr/bin/env ruby
 
-# Metadata for SwiftBar
-#  <swiftbar.title>TimeOnTrack</swiftbar.title>
-#  <swiftbar.version>v2.0.0</swiftbar.version>
-#  <swiftbar.author>Roman Gebath</swiftbar.author>
-#  <swiftbar.author.github>rcheetah</swiftbar.author.github>
-#  <swiftbar.desc>A sophisticated time tracker, which allows to track and pause mulitple projects at once.</swiftbar.desc>
-#  <swiftbar.image>https://github.com/rcheetah/xbar-timeontrack/blob/ea0f22ad093ec8ed3eabca3a774f78f241752f54/screenshot.jpg</swiftbar.image>
-#  <swiftbar.dependencies>ruby</swiftbar.dependencies>
-#  <swiftbar.abouturl>https://github.com/rcheetah/xbar-timeontrack/</swiftbar.abouturl>
+# Metadata for SwiftBar.
+#
+# NOTE: SwiftBar only reads the descriptive tags (title/version/author/desc/image/
+# dependencies/abouturl) with the `xbar.` prefix — in its source these are typed
+# [.bitbar, .xbar], NOT .swiftbar. Only SwiftBar's own extras use `swiftbar.`.
+# Writing `swiftbar.title` etc. silently leaves the About pane empty.
+#  <xbar.title>TimeOnTrack</xbar.title>
+#  <xbar.version>v2.0.0</xbar.version>
+#  <xbar.author>Roman Gebath</xbar.author>
+#  <xbar.author.github>rcheetah</xbar.author.github>
+#  <xbar.desc>A sophisticated time tracker, which allows to track and pause mulitple projects at once.</xbar.desc>
+#  <xbar.image>https://github.com/rcheetah/xbar-timeontrack/blob/ea0f22ad093ec8ed3eabca3a774f78f241752f54/screenshot.jpg</xbar.image>
+#  <xbar.dependencies>ruby</xbar.dependencies>
+#  <xbar.abouturl>https://github.com/rcheetah/xbar-timeontrack/</xbar.abouturl>
+
+# SwiftBar-only extras
 #  <swiftbar.hideLastUpdated>true</swiftbar.hideLastUpdated>
 #  <swiftbar.refreshOnOpen>true</swiftbar.refreshOnOpen>
 #  <swiftbar.runInBash>false</swiftbar.runInBash>
 
-# Variables for preferences in the app:
-#  <swiftbar.var>string(VAR_LANGUAGE_OVERRIDE=): Override the system language using a language code (e.g. en_US, de_DE)</swiftbar.var>
-#  <swiftbar.var>boolean(VAR_DEV_MODE=false): Developer mode. Use a separate data directory and mark the menu bar item, so a test copy can run alongside the real one without touching its data.</swiftbar.var>
+# Variables for preferences in the app.
+# The default value MUST be double-quoted or SwiftBar's regex does not match the tag
+# at all and the variable never shows up in Settings > Plugins > Plugin Variables.
+#  <swiftbar.var>string(VAR_LANGUAGE_OVERRIDE=""): Override the system language using a language code (e.g. en_US, de_DE)</swiftbar.var>
+#  <swiftbar.var>boolean(VAR_DEV_MODE="false"): Developer mode. Use a separate data directory and mark the menu bar item, so a test copy can run alongside the real one without touching its data.</swiftbar.var>
 
 
 require 'json'
@@ -197,8 +206,22 @@ def t(key, placeholders = {})
   return translation
 end
 
-def icon(icon, preserve_color=false)
-  return " | #{preserve_color ? "image" : "templateImage"}=\"#{$ICON[icon]}\""
+# SwiftBar splits a line on the FIRST `|` only; everything after it is the parameter
+# list, in which parameters are separated by SPACES. A second `|` therefore becomes part
+# of a parameter key and silently disables every parameter after it. So every helper
+# below returns bare `key="value"` fragments and the line is assembled once, in
+# menu_line, with a single separator.
+# All icons are template images, so macOS recolours them to match the menu (white on a
+# dark menu bar, black on a light one). Do NOT switch one to `image=`: that renders the
+# literal colour baked into the SVG, which is what made the record dot appear black on a
+# dark dropdown.
+def icon(icon)
+  return "templateImage=\"#{$ICON[icon]}\""
+end
+
+# Marker for the job/entry currently being tracked.
+def running_icon
+  return icon("rec")
 end
 
 def escape_html(text)
@@ -209,6 +232,14 @@ end
 # would raise on the translated language files.
 def read_json(path)
   JSON.parse(File.read(path, encoding: "UTF-8"))
+end
+
+# Assemble one menu line: "<title> | param=value param=value ...".
+# nil/empty/false params are dropped so callers can pass conditionals inline.
+def menu_line(title, *params)
+  clean = params.flatten.compact.reject { |param| param.to_s.strip.empty? }
+  return title.to_s if clean.empty?
+  "#{title} | #{clean.join(" ")}"
 end
 
 def run_command(command, parameters = [])
@@ -434,18 +465,26 @@ end
 def buildMenu()
   activeJob = getActiveJob()
 
-  # Menubar. In dev mode the text is prefixed and tinted yellow, so a test copy is
+  # Menubar. In dev mode the text is prefixed and tinted amber, so a test copy is
   # unmistakable next to the real one. (SwiftBar has no background-colour parameter.)
+  #
+  # Deliberately NO `refresh=true` here. A title line carrying refresh but no bash makes
+  # SwiftBar treat a plain left click as that action (`routeForBarItemClick` ->
+  # `.runTitleAction`), so the click only re-runs the plugin — which is already ticking
+  # every second — and the dropdown never opens. Without it, left click opens the menu
+  # normally.
   prefix = $DEV_MODE ? $DEV_PREFIX : ""
-  dev_params = $DEV_MODE ? "| color=#E8A400" : ""
+  dev_params = $DEV_MODE ? "color=#E8A400" : nil
   if $data["activeJob"].nil?
-    puts "#{prefix}#{icon("logo")} #{dev_params}"
+    puts menu_line("#{prefix}", icon("logo"), dev_params)
+  elsif $data["activeEntry"]
+    # The icon alternates every other second so the clock visibly ticks while running.
+    puts menu_line("#{prefix}#{format_duration(activeJob["total"], true)}",
+                   icon(activeJob["total"] % 2 == 0 ? "rec" : "rec-alt"),
+                   $FONT_MENU, dev_params)
   else
-    if $data["activeEntry"]
-      puts "#{prefix}#{format_duration(activeJob["total"], true)} #{icon(activeJob["total"] % 2 == 0 ? "rec" : "rec-alt")} | #{$FONT_MENU} | refresh=true #{dev_params}" #| color=#88ff88
-    else
-      puts "#{prefix}#{format_duration(activeJob["total"], true)} #{icon("pause")} | #{$FONT_MENU} | refresh=true #{dev_params}" #| color=#ffaaaa
-    end
+    puts menu_line("#{prefix}#{format_duration(activeJob["total"], true)}",
+                   icon("pause"), $FONT_MENU, dev_params)
   end
 
   # Divider for Dropdown
@@ -453,10 +492,21 @@ def buildMenu()
 
   # Dropdown
 
-  puts "#{t("job.continue", { jobname: activeJob["name"] })} | refresh=true | #{run_command("job:start", [activeJob["id"]])} #{icon("play")}" if $data["activeJob"] && !$data["activeEntry"]
-  puts "#{t("job.pause", { jobname: activeJob["name"] })} | refresh=true | #{run_command("job:pause")} #{icon("pause")}" if $data["activeEntry"]
-  puts "#{t("job.stop", { jobname: activeJob["name"] })} | refresh=true | #{run_command("job:stop")} #{icon("stop")}" if $data["activeJob"]
-  puts "#{t("job.new")} | refresh=true | #{run_command("job:new")} #{icon("new")}" unless $data["activeEntry"]
+  if $data["activeJob"] && !$data["activeEntry"]
+    puts menu_line(t("job.continue", { jobname: activeJob["name"] }),
+                   "refresh=true", run_command("job:start", [activeJob["id"]]), icon("play"))
+  end
+  if $data["activeEntry"]
+    puts menu_line(t("job.pause", { jobname: activeJob["name"] }),
+                   "refresh=true", run_command("job:pause"), icon("pause"))
+  end
+  if $data["activeJob"]
+    puts menu_line(t("job.stop", { jobname: activeJob["name"] }),
+                   "refresh=true", run_command("job:stop"), icon("stop"))
+  end
+  unless $data["activeEntry"]
+    puts menu_line(t("job.new"), "refresh=true", run_command("job:new"), icon("new"))
+  end
 
   # Visual Divider
   puts "---"
@@ -469,32 +519,43 @@ def buildMenu()
     next if job["archived"]
     job_is_tracking = (job["id"] == tracking_job_id)
 
-    puts "#{job["name"]} | length=35 #{job_is_tracking ? icon("rec", true) : ""}"
-    puts "-- #{format_duration(job["total"])} #{icon("time")}"
+    puts menu_line(job["name"], "length=35", job_is_tracking ? running_icon : nil)
+    puts menu_line("-- #{format_duration(job["total"])}", icon("time"))
     puts "-----"
+    # While this job is being tracked, its mutating actions carry no action and are
+    # therefore rendered greyed out.
     puts job_is_tracking ?
-      "-- #{t("job.menu.continue")} #{icon("play")}" :
-      "-- #{t("job.menu.continue")} | #{run_command("job:start", [job["id"]])} #{icon("play")} | refresh=true"
-    puts "-- #{t("job.menu.rename")} | #{run_command("job:rename", [job["id"]])} #{icon("rename")} | refresh=true"
+      menu_line("-- #{t("job.menu.continue")}", icon("play")) :
+      menu_line("-- #{t("job.menu.continue")}",
+                run_command("job:start", [job["id"]]), icon("play"), "refresh=true")
+    puts menu_line("-- #{t("job.menu.rename")}",
+                   run_command("job:rename", [job["id"]]), icon("rename"), "refresh=true")
     puts job_is_tracking ?
-      "-- #{t("job.menu.archive")} #{icon("archive")}" :
-      "-- #{t("job.menu.archive")} | #{run_command("job:archive", [job["id"]])} #{icon("archive")} | refresh=true"
+      menu_line("-- #{t("job.menu.archive")}", icon("archive")) :
+      menu_line("-- #{t("job.menu.archive")}",
+                run_command("job:archive", [job["id"]]), icon("archive"), "refresh=true")
     puts job_is_tracking ?
-      "-- #{t("job.menu.delete")} #{icon("delete")}" :
-      "-- #{t("job.menu.delete")} | #{run_command("job:delete", [job["id"]])} #{icon("delete")} | refresh=true"
-    puts "-- #{t("job.menu.daily_summary")} | #{run_command("job:summary", [job["id"]])} #{icon("journal")} | refresh=true"
-    if(job["entries"].length > 0)
+      menu_line("-- #{t("job.menu.delete")}", icon("delete")) :
+      menu_line("-- #{t("job.menu.delete")}",
+                run_command("job:delete", [job["id"]]), icon("delete"), "refresh=true")
+    puts menu_line("-- #{t("job.menu.daily_summary")}",
+                   run_command("job:summary", [job["id"]]), icon("journal"), "refresh=true")
+    if job["entries"].length > 0
       puts "-----"
       puts "-- #{t("job.menu.entries")}"
       job["entries"].each { |entry|
         entry_is_tracking = ( $data["activeEntry"] == entry["id"] )
         entry_name = Time.at(entry["start"]).strftime("%Y-%m-%d %H:%M")
         entry_name = entry["name"] if entry["name"]
-        puts "-- #{format_duration( entry["total"])} (#{entry_name}) #{entry_is_tracking ? icon("rec", true) : ""}"
+        puts menu_line("-- #{format_duration(entry["total"])} (#{entry_name})",
+                       entry_is_tracking ? running_icon : nil)
         unless entry_is_tracking
-          puts "---- #{t("entry.edit")} | #{run_command("entry:edit", [entry["id"]])} #{icon("edit")} | refresh=true"
-          puts "---- #{t("entry.rename")} | #{run_command("entry:rename", [entry["id"]])} #{icon("rename")} | refresh=true"
-          puts "---- #{t("entry.delete")} | #{run_command("entry:delete", [entry["id"]])} #{icon("delete")} | refresh=true"
+          puts menu_line("---- #{t("entry.edit")}",
+                         run_command("entry:edit", [entry["id"]]), icon("edit"), "refresh=true")
+          puts menu_line("---- #{t("entry.rename")}",
+                         run_command("entry:rename", [entry["id"]]), icon("rename"), "refresh=true")
+          puts menu_line("---- #{t("entry.delete")}",
+                         run_command("entry:delete", [entry["id"]]), icon("delete"), "refresh=true")
         end
       }
     else
@@ -505,15 +566,15 @@ def buildMenu()
   # Visual Divider
   puts "---"
 
-  puts "#{t("journal.show")} #{icon("journal")} | #{run_command("journal:open")} #{icon("journal")}"
-  puts "#{t("savefile.edit")} #{icon("file")} | #{run_command("savefile:edit")} | alternate=true"
+  puts menu_line(t("journal.show"), run_command("journal:open"), icon("journal"))
+  puts menu_line(t("savefile.edit"), run_command("savefile:edit"), "alternate=true")
 
   # An unmistakable in-menu banner, plus the data directory, so it is obvious that this
   # copy is the dev one and which files it writes to.
   if $DEV_MODE
     puts "---"
-    puts "#{$DEV_SUFFIX.strip} DEV MODE | color=#E8A400"
-    puts "-- data: #{$DATA_DIR} | color=#888888 length=80"
+    puts menu_line("#{$DEV_SUFFIX.strip} DEV MODE", "color=#E8A400")
+    puts menu_line("-- data: #{$DATA_DIR}", "color=#888888", "length=80")
   end
 end
 
