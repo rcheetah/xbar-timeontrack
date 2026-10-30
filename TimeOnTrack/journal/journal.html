@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="%%LANG%%">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>%%TITLE%%</title>
+<meta name="generator" content="TimeOnTrack">
+<style>
+%%CSS%%
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <h1>📖 <span class="title-text"></span></h1>
+  <div class="bar-right">
+    <span class="stamp" id="stamp" title=""></span>
+    <a class="reload" id="reload" href="#" title="">
+      <span aria-hidden="true">⟳</span>
+    </a>
+  </div>
+</header>
+
+<div class="stale" id="stale" hidden>
+  <span class="stale-dot" aria-hidden="true"></span>
+  <strong class="stale-label"></strong>
+  <span class="stale-hint"></span>
+</div>
+
+<main>
+
+  <section class="controls" aria-label="filters">
+    <div class="controls-row">
+      <input type="search" id="q" class="q" autocomplete="off" spellcheck="false">
+      <div class="seg" role="tablist" aria-label="view">
+        <button type="button" id="view-time" class="seg-btn is-on" role="tab" aria-selected="true"></button>
+        <button type="button" id="view-table" class="seg-btn" role="tab" aria-selected="false"></button>
+      </div>
+    </div>
+
+    <div class="controls-row controls-filters">
+      <label class="fld">
+        <span class="fld-label" id="lbl-from"></span>
+        <input type="date" id="from">
+      </label>
+      <label class="fld">
+        <span class="fld-label" id="lbl-to"></span>
+        <input type="date" id="to">
+      </label>
+
+      <label class="fld">
+        <span class="fld-label" id="lbl-year"></span>
+        <select id="year"></select>
+      </label>
+      <label class="fld">
+        <span class="fld-label" id="lbl-month"></span>
+        <select id="month"></select>
+      </label>
+
+      <label class="fld">
+        <span class="fld-label" id="lbl-min"></span>
+        <select id="min-duration">
+          <option value="0"></option>
+          <option value="60">1 min</option>
+          <option value="300">5 min</option>
+          <option value="600">10 min</option>
+          <option value="1800">30 min</option>
+        </select>
+      </label>
+
+      <label class="chk"><input type="checkbox" id="f-active" checked><span></span></label>
+      <label class="chk"><input type="checkbox" id="f-archived" checked><span></span></label>
+
+      <button type="button" class="btn ghost" id="reset"></button>
+    </div>
+  </section>
+
+  <section class="summary" aria-live="polite">
+    <span class="sum-numbers" id="sum-numbers"></span>
+    <button type="button" class="btn" id="export"></button>
+  </section>
+
+  <section class="empty" id="empty" hidden></section>
+
+  <!-- "By time" view -->
+  <section id="pane-time" class="pane">
+    <div class="charts" id="charts">
+      <div class="chart">
+        <h2 class="chart-title" id="chart-month-title"></h2>
+        <div class="bars" id="bars-month"></div>
+      </div>
+      <div class="chart">
+        <h2 class="chart-title" id="chart-jobs-title"></h2>
+        <div class="bars" id="bars-jobs"></div>
+      </div>
+    </div>
+    <div class="groups" id="groups"></div>
+  </section>
+
+  <!-- "Table" view -->
+  <section id="pane-table" class="pane" hidden>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th class="th-sort" data-sort="name"></th>
+          <th class="th-sort" data-sort="period"></th>
+          <th class="th-sort num" data-sort="entries"></th>
+          <th class="th-sort num" data-sort="total"></th>
+          <th class="th-sort num" data-sort="avg"></th>
+          <th class="th-sort" data-sort="status"></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </section>
+
+</main>
+
+<footer class="foot" id="foot"></footer>
+
+<script id="tot-data" type="application/json">%%DATA%%</script>
+<script id="tot-i18n" type="application/json">%%I18N%%</script>
+<script>
+const TOT_GENERATED = %%GENERATED%%;
+const TOT_PLUGIN_FILE = "%%PLUGIN_FILE%%";
+const TOT_GENERATED_TEXT = "%%GENERATED_TEXT%%";
+</script>
+<script>
+%%JS%%
+</script>
+
+</body>
+</html>

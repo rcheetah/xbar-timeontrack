@@ -32,6 +32,7 @@ require 'securerandom'
 require 'time'
 require 'tmpdir'
 require 'fileutils'
+require 'shellwords'
 
 
 $ICON = {
@@ -57,16 +58,38 @@ $ICON = {
 # read our bundled assets from is the real repository.
 $PLUGIN_DIR = File.dirname(File.realpath(__FILE__))
 
-# Mutable state lives outside the repository.
+# Mutable state lives outside the repository, and outside the plugin folder too.
 #
-# SwiftBar passes SWIFTBAR_PLUGIN_DATA_PATH, but that path is
-# `<plugin folder>/<this file's name>` — and it therefore *is* this very file whenever
-# the plugin sits directly in the plugin folder. On a case-insensitive volume (macOS
-# default) SwiftBar's support folder and the plugin folder are the same directory, so
-# using that path would collide with the plugin itself. Use it only when it resolves to
-# a separate, existing directory; otherwise fall back to our own support directory.
+# SWIFTBAR_PLUGIN_DATA_PATH is NOT trusted here. On SwiftBar 2.1.x it is unusable: the
+# plugin's absolute path gets appended below the support root, producing nonsense like
+#      <plugin folder>/Users/me/git/repo/TimeOnTrack.1s.rb/
+# (SwiftBar's own source calls this out — see `regressedSupportDirectory`, "an absolute
+# plugin ID mistakenly appended below the support root"). SwiftBar does create that
+# directory, so a plain File.directory? test is not enough to catch it. Even on a
+# corrected build the path would be `<plugin folder>/<this file's name>`, which collides
+# with the plugin file itself.
+#
+# So: accept the variable only when it is a real directory that is *not* inside the
+# plugin folder; otherwise use our own Application Support directory. That is stable,
+# bookmark-friendly, and keeps data out of the plugin folder — which also matters because
+# SwiftBar treats everything in there as a plugin candidate.
 $DATA_DIR = ENV["SWIFTBAR_PLUGIN_DATA_PATH"].to_s
 $DATA_DIR = "" unless File.directory?($DATA_DIR)
+
+unless $DATA_DIR.empty?
+  resolved = File.realpath($DATA_DIR) rescue $DATA_DIR
+  # Directories that mean "this variable is not telling us a sane location": the repo
+  # (the plugin lives there) and SwiftBar's plugin folder (everything in it is treated as
+  # a plugin, and that is where the 2.1.x regression lands).
+  forbidden = [$PLUGIN_DIR]
+  plugins_path = ENV["SWIFTBAR_PLUGINS_PATH"].to_s
+  forbidden << (File.realpath(plugins_path) rescue plugins_path) unless plugins_path.empty?
+
+  if forbidden.any? { |base| resolved == base || resolved.start_with?(base + File::SEPARATOR) }
+    $DATA_DIR = ""
+  end
+end
+
 if $DATA_DIR.empty?
   $DATA_DIR = File.join(Dir.home, "Library", "Application Support", "TimeOnTrack")
 end
@@ -84,6 +107,10 @@ $DATA_DIR = File.join($DATA_DIR, "dev") if $DEV_MODE
 
 $SAVEFILE = File.join($DATA_DIR, "TimeOnTrackData.json")
 $ARCHIVEFILE = File.join($DATA_DIR, "TimeOnTrackArchive.json")
+# Fixed name (not timestamped) so a browser bookmark keeps working. The page carries its
+# own generation time and offers a reload button, so staleness is visible rather than
+# hidden. Never written unless the journal is actually requested.
+$SAVEFILE_JOURNAL = File.join($DATA_DIR, "journal.html")
 $LANG_DIR = File.join($PLUGIN_DIR, "TimeOnTrack", "lang")
 $LANG_FALLBACK = "en_US"
 $FONT_MENU = "font='PTMono-Bold' size=13"
@@ -398,65 +425,89 @@ def archiveJob(job)
   end
 end
 
-def generateJournalJobDom(job)
-  tmpl_job = "<div class='job'><h3>%%JOB_NAME%%</h3><p><strong>#{t("journal.job.total")}: %%TIME_TOTAL%%</strong></p><p class='timeframe'>%%TIME_FRAME%%</p><table><thead><tr><th>#{t("journal.job.start")}</th><th>#{t("journal.job.end")}</th><th>#{t("journal.job.duration")}</th></tr></thead><tbody>%%ENTRIES%%</tbody></table></div>"
-  tmpl_job.gsub!("%%JOB_NAME%%", escape_html(job["name"]))
-  tmpl_job.gsub!("%%TIME_TOTAL%%", format_duration(job["total"]))
+# The journal is a self-contained offline page: the job data is embedded as JSON and all
+# filtering, sorting and grouping happens in the browser. The plugin only supplies data.
+# Assets live in TimeOnTrack/journal/ so the page can be edited without fighting Ruby
+# string quoting.
 
-  unless job["entries"].empty?
-    earliest = job["entries"].min_by { |entry| entry["start"] }
-    latest = job["entries"].max_by { |entry| entry["end"] }
-    timeframe = Time.at(earliest["start"]).strftime("%d.%m.%Y") + " #{t("journal.job.duration.to")} " + Time.at(latest["end"]).strftime("%d.%m.%Y")
-    tmpl_job.gsub!("%%TIME_FRAME%%", timeframe)
-
-    tmpl_entry_row = '<tr><td>%%START%%</td><td>%%END%%</td><td>%%DURATION%%</td></tr>'
-    rows = []
-    job["entries"].sort_by { |entry| entry["start"] }.each do |entry|
-      # dup: gsub! would mutate the shared template string, repeating the first row.
-      row = tmpl_entry_row.dup
-      start = Time.at(entry["start"]).strftime("%Y-%m-%d %H:%M:%S")
-      ende = Time.at(entry["end"]).strftime("%Y-%m-%d %H:%M:%S")
-      duration = format_duration(entry["total"])
-      duration += " (#{escape_html(entry["name"])})" if entry["name"]
-      row.gsub!("%%START%%", start)
-      row.gsub!("%%END%%", ende)
-      row.gsub!("%%DURATION%%", duration)
-      rows << row
-    end
-    tmpl_job.gsub!("%%ENTRIES%%", rows.join(""))
-
-  else
-    tmpl_job.gsub!("%%TIME_FRAME%%", "n/a")
-    tmpl_job.gsub!("%%ENTRIES%%", t("journal.job.entries.emptystate"))
-  end
-  return tmpl_job
+def journal_asset(name)
+  return File.join($PLUGIN_DIR, "TimeOnTrack", "journal", name)
 end
 
-def generateJournal()
+# The name SwiftBar knows this plugin by. NOT File.realpath: the plugin runs from a
+# symlink in the plugin folder, and SwiftBar's URL scheme addresses it as <plugin file
+# name>. A dev-named link (TimeOnTrack-dev.1s.rb) must be addressed by that name, so
+# refreshplugin URLs built from the real path would silently target nothing.
+def plugin_file_name
+  path = ENV["SWIFTBAR_PLUGIN_PATH"].to_s
+  return File.basename(path) unless path.empty?
+  return File.basename($0) unless $0.to_s.empty?
+  return File.basename(File.realpath(__FILE__))
+end
 
-  tmpl_journal_dom = "<!DOCTYPE html><html lang='#{$LANG.gsub("_", "-")}'><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1.0'><title>#{t("journal.title")}</title><style>body{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;} #main{ max-width: 1200px; margin: 0 auto;} .jobs{flex-direction:column;display:flex;gap:.5rem} .job { background-color: lightgrey; padding: 1rem; border-radius: 0.25rem; margin: 0.5rem;}</style></head><body><div id='main'><h1>📖 #{t("journal.title")}</h1><h2>#{t("journal.jobs.active")}</h2><div id='jobs-active' class='jobs'>%%JOBS_ACTIVE%% </div><h2>#{t("journal.jobs.archived")}</h2><div id='jobs-archived' class='jobs'>%%JOBS_ARCHIVED%% </div></div></body></html>"
-  active = $data["jobs"].select { |job| !job["archived"] }
-  archived = archive_jobs
+# Compact payload. Keys are shortened and derived fields (total, job_id) are dropped
+# because the browser recomputes them; this keeps the embedded data at ~100 KB for
+# 777 jobs / 3.2k entries instead of ~530 KB.
+def journal_payload
+  jobs = $data["jobs"].reject { |job| job["archived"] } + archive_jobs
+  return jobs.map { |job|
+    {
+      "n" => job["name"].to_s,
+      "a" => job["archived"] ? 1 : 0,
+      "e" => (job["entries"] || []).map { |entry|
+        e = { "s" => entry["start"], "e" => entry["end"] }
+        e["n"] = entry["name"] if entry["name"]
+        e
+      },
+    }
+  }
+end
 
-  active_doms = []
-  active.each do |job|
-    dom = generateJournalJobDom(job)
-    active_doms << dom
-  end
-  tmpl_journal_dom.gsub!("%%JOBS_ACTIVE%%", active_doms.join(""))
+# Only the strings the browser needs. Kept separate from the Ruby-side $LANG_DATA.
+def journal_i18n
+  keys = %w[
+    journal.title journal.jobs.active journal.jobs.archived
+    journal.job.total journal.job.start journal.job.end journal.job.duration
+    journal.job.duration.to journal.job.entries.emptystate
+    journal.filter.search journal.filter.from journal.filter.to
+    journal.filter.year journal.filter.month journal.filter.all
+    journal.filter.active journal.filter.archived journal.filter.min_duration
+    journal.filter.view_time journal.filter.view_table journal.filter.reset
+    journal.summary.jobs journal.summary.entries journal.summary.total
+    journal.summary.avg journal.summary.none
+    journal.export.csv journal.refresh journal.generated
+    journal.stale journal.staleHint journal.entries journal.entries.named
+    journal.by_month journal.top_jobs journal.no_entries journal.status
+    journal.period journal.min journal.hours journal.month
+  ]
+  out = {}
+  keys.each { |key| out[key] = t(key) }
+  return out
+end
 
-  archived_doms = []
-  archived.each do |job|
-    dom = generateJournalJobDom(job)
-    archived_doms << dom
-  end
-  tmpl_journal_dom.gsub!("%%JOBS_ARCHIVED%%", archived_doms.join(""))
+def generateJournal
+  template = File.read(journal_asset("journal.html"), encoding: "UTF-8")
+  css = File.read(journal_asset("journal.css"), encoding: "UTF-8")
+  js = File.read(journal_asset("journal.js"), encoding: "UTF-8")
 
-  filepath = Dir.tmpdir + "/TimeOnTrackJournal-#{Time.now.strftime("%Y-%m-%d-%H-%M-%S")}.html"
-  File.write(filepath, tmpl_journal_dom)
+  # `</` inside an embedded <script> would terminate the block early.
+  data = JSON.generate(journal_payload).gsub("</", "<\\/")
+  i18n = JSON.generate(journal_i18n).gsub("</", "<\\/")
 
-  return filepath
+  html = template.dup
+  html.gsub!("%%LANG%%", $LANG.gsub("_", "-"))
+  html.gsub!("%%TITLE%%", escape_html(t("journal.title")))
+  html.gsub!("%%GENERATED%%", Time.now.to_i.to_s)
+  html.gsub!("%%GENERATED_TEXT%%", escape_html(Time.now.strftime("%d.%m.%Y %H:%M")))
+  html.gsub!("%%PLUGIN_FILE%%", escape_html(plugin_file_name))
+  html.gsub!("%%DATA%%", data)
+  html.gsub!("%%I18N%%", i18n)
+  html.gsub!("%%CSS%%", css)
+  html.gsub!("%%JS%%", js)
 
+  FileUtils.mkpath($DATA_DIR)
+  File.write($SAVEFILE_JOURNAL, html, encoding: "UTF-8")
+  return $SAVEFILE_JOURNAL
 end
 
 def loadJSON()
@@ -765,9 +816,39 @@ def actionHandler()
     end
 
   when "journal:open"
-    file = generateJournal()
-    `open #{file}`
     begin
+      file = generateJournal()
+      # `open` reuses an existing tab for the same URL, but the browser will not re-read
+      # a file it already has loaded — the page's own reload button covers that case.
+      # `-g` keeps the browser from stealing focus, so the journal can be opened while
+      # working in another app. (Note: it suppresses activation, not all visual effects —
+      # if the browser is on the current Space a new tab may still appear.)
+      `open -g #{Shellwords.escape(file)}`
+    rescue => error
+      alert("#{t("error.journal:open")} \n#{error.message}\n#{error.backtrace.join("\n")}")
+    end
+
+  # Triggered by the journal page's reload button via SwiftBar's URL scheme:
+  #   swiftbar://refreshplugin?name=<plugin>&journal=regen
+  # SwiftBar passes unknown query parameters through as environment variables
+  # (AppDelegate: `plugin.refreshEnv = params.filter { $0.key != "name" }`).
+  #
+  # !! REQUIRES SWIFTBAR >= 2.1.2 !!
+  # The `refreshplugin` endpoint does NOT exist in 2.1.1 (the last stable release, and the
+  # version Homebrew currently ships). Verified by inspecting the 2.1.1 binary: the string
+  # "refreshplugin" is absent, while "refreshallplugins" and "setephemeralplugin" are
+  # present. On 2.1.1 `open` still exits 0 — LaunchServices accepts the URL and the app
+  # then ignores it — so the failure is silent. Confirmed with a probe plugin: the refresh
+  # reason stayed `Schedule` instead of `URLScheme`, and no query parameter ever arrived.
+  #
+  # TODO(swiftbar-2.1.2): once 2.1.2 is out of beta AND available via Homebrew
+  # (`curl -sL https://formulae.brew.sh/api/cask/swiftbar.json | grep version`), verify
+  # end-to-end that the reload button leaves the page fresh, then delete this note.
+  # Until then the button and the auto-refresh are inert; "Show Journal" in the menu still
+  # regenerates, so the journal itself is never stale when opened deliberately.
+  when "journal:regen"
+    begin
+      generateJournal()
     rescue => error
       alert("#{t("error.journal:open")} \n#{error.message}\n#{error.backtrace.join("\n")}")
     end
@@ -797,6 +878,21 @@ def _main()
   # Load data
   loadJSON()
   $LANG_DATA = load_language_file()
+
+  # A journal reload arrives as a SwiftBar URL-scheme refresh, so the plugin is invoked
+  # normally (no ARGV) with `journal` exported into the environment. Regenerate and exit
+  # without touching the menu or the data — this is a side-channel, not a plugin run.
+  #
+  # !! REQUIRES SWIFTBAR >= 2.1.2 — see the note on "journal:regen" in actionHandler. On
+  # 2.1.1 this never fires, because the `refreshplugin` endpoint does not exist yet.
+  if ENV["journal"].to_s.strip.downcase == "regen"
+    begin
+      generateJournal()
+    rescue => error
+      alert("#{t("error.journal:open")} \n#{error.message}\n#{error.backtrace.join("\n")}")
+    end
+    exit
+  end
 
   # Action Handler
   # will handle actions if arguments are passed to the script

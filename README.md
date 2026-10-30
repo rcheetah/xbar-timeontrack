@@ -71,7 +71,27 @@ Completed or inactive jobs can be archived, keeping the data intact for future r
 
 ### Comprehensive Journal Overview
 
-The journal provides an overview of all jobs, both active and archived. It displays detailed information about each job, including total time tracked, individual entries, and timeframes. This makes it easy to review work history, generate reports, or reflect on how time was spent.
+*Show Journal* opens a self-contained page covering every job, active and archived, with
+all of its entries. It is a single offline HTML file — nothing is loaded from the network,
+and it keeps working if you copy it somewhere else.
+
+- **Two views.** *By time* groups the months, with collapsible jobs and their entries;
+  *Table* lists jobs with sortable columns and expands to the entries.
+- **Search and filter.** Free-text search covers job names *and* entry names, plus date
+  range, year, month, a minimum duration (to hide the very short session fragments), and
+  switches for active/archived.
+- **Live totals.** A summary line always shows the time in the current selection, which is
+  what you want when billing for a client or a period.
+- **Export.** The filtered rows can be saved as CSV for a spreadsheet.
+- **Charts.** Hours per month and the jobs with the most time, drawn with plain CSS.
+
+The page is written to `~/Library/Application Support/TimeOnTrack/journal.html`, so you can
+bookmark it. It shows when it was generated, and the ⟳ button fetches fresh numbers.
+
+> ⚠️ **The in-page reload needs SwiftBar 2.1.2 or newer.** That version is still in beta, and
+> the current stable release (2.1.1) does not support the mechanism the button relies on — so
+> on 2.1.1 the button does nothing. **"Show Journal" from the menu always regenerates the
+> page**, so simply reopen it from there until the update lands.
 
 > 🛠️ **Work-in-progress:** This feature is still in development
 

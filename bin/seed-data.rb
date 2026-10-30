@@ -75,18 +75,30 @@ data = {
   "jobs" => jobs,
 }
 
-target = ARGV[0] || File.join(File.dirname(File.realpath(__FILE__)), "..", "tmp", "seed-data")
+# An explicit empty archive is written by default, but an existing one is never
+# clobbered: a real archive can be large and irreplaceable, and it is often exactly what
+# you want to test the journal against. Use --fresh-archive to reset it deliberately.
+args = ARGV.reject { |a| a.start_with?("--") }
+fresh_archive = ARGV.include?("--fresh-archive")
+
+target = args[0] || File.join(File.dirname(File.realpath(__FILE__)), "..", "tmp", "seed-data")
 FileUtils.mkpath(target)
 
 savefile = File.join(target, "TimeOnTrackData.json")
 archivefile = File.join(target, "TimeOnTrackArchive.json")
 
 File.write(savefile, JSON.pretty_generate(data))
-File.write(archivefile, JSON.pretty_generate({ "jobs" => [] }))
+
+if File.exist?(archivefile) && !fresh_archive
+  kept = (JSON.parse(File.read(archivefile, encoding: "UTF-8"))["jobs"] || []).size
+  puts "  #{File.basename(archivefile)}  kept as-is (#{kept} archived jobs)"
+else
+  File.write(archivefile, JSON.pretty_generate({ "jobs" => [] }))
+  puts "  #{File.basename(archivefile)}  reset (empty)"
+end
 
 puts "Seed data written to #{File.expand_path(target)}"
 puts "  #{File.basename(savefile)}  (#{jobs.size} jobs, #{jobs.sum { |j| j["entries"].size }} entries)"
-puts "  #{File.basename(archivefile)}  (empty)"
 puts
 puts "Run the plugin against it with:"
 puts "  SWIFTBAR_PLUGIN_DATA_PATH=#{File.expand_path(target)} ruby TimeOnTrack.1s.rb"

@@ -114,6 +114,45 @@ knowing before anyone "simplifies" it back.
 | `en_US.json` missing `prompt.job.daily_summary.title` | German was fine, English fell back to the raw key |
 | UTF-8 not forced when reading JSON | With `LANG` unset Ruby reads as US-ASCII and **raises** on translated language files |
 | `loadJSON` assumed `$data["jobs"]` exists | An empty or hand-edited data file crashed the plugin |
+| Journal written to `$TMPDIR` with a timestamp | Bookmarks broke on every view, files accumulated, and macOS purged them after 3 days |
+
+### The journal was rebuilt
+
+The old journal rendered all jobs at once as static HTML built from Ruby string templates.
+With the real dataset that is 777 jobs and 3,235 entries (1,645 hours across two years),
+which is not usable as a flat list — and the generation code was where the shared-template
+`gsub!` bug lived.
+
+It is now a self-contained offline page under `TimeOnTrack/journal/`: the data is embedded
+as JSON (≈100 KB, down from ≈530 KB thanks to shortened keys and dropped derived fields) and
+all filtering, sorting, grouping, charting and CSV export happens in the browser. Ruby only
+embeds data and assets.
+
+Behaviour changes worth knowing:
+
+- Written to a **fixed** path, `~/Library/Application Support/TimeOnTrack/journal.html`, so
+  bookmarks work and nothing accumulates.
+- **Never regenerated on a timer.** The journal is a rarely used view, and the plugin cannot
+  know whether a browser tab is open. It is written only when requested.
+- A ⟳ button regenerates on demand through `swiftbar://refreshplugin?…&journal=regen`. The
+  page also attempts this on load when it is more than a minute old.
+
+> ⚠️ **That reload mechanism needs SwiftBar 2.1.2, which is still in beta.** The
+> `refreshplugin` endpoint does not exist in 2.1.1 — the last stable release, and what
+> Homebrew currently installs. On 2.1.1 the button and the auto-refresh do nothing at all,
+> and they fail *silently*: `open` returns success and the app ignores the URL. Confirmed by
+> checking the 2.1.1 binary (`refreshplugin` is absent from it) and by watching a probe
+> plugin, which never received the parameter.
+>
+> The code is written correctly for 2.1.2 — the `v2.1.2-beta-5` source has the endpoint and
+> forwards query parameters to the plugin as environment variables. No rewrite is needed once
+> it ships; the TODOs marked `swiftbar-2.1.2` in `TimeOnTrack.1s.rb` and `journal.js` say what
+> to check.
+>
+> In the meantime **"Show Journal" from the menu always regenerates**, so the journal is
+> never stale when you open it deliberately. Only an already-open tab cannot be refreshed
+> from within the page.
+
 
 ### Umlauts in dialog input (pre-existing bug, finally fixed)
 
