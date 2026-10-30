@@ -32,6 +32,7 @@
     "prompt.entry.rename": "Bennene den Eintrag von „%{jobname}“ mit der Dauer von %{duration}:",
     "prompt.savefile.edit.message": "Wenn die Speicherdatei direkt bearbeitet wird, kann sie dabei ungültig werden! Verwende diese Funktion nur, wenn du genau weißt was du tust – und sei dabei vorsichtig. \nMöchtest du die Datei wirklich öffnen?",
     "prompt.savefile.edit.title": "ACHTUNG!",
+    "prompt.savefile.edit.skip": "Ja, nicht mehr fragen",
     "prompt.yes": "Ja",
     "prompt.no": "Nein",
     "journal.title": "TimeOnTrack Journal",
@@ -91,5 +92,7 @@
     "error.entry:rename": "Konnte Eintrag nicht umbenennen:",
     "error.journal:open": "Konnte Journal nicht öffnen:",
     "error.savefile:edit": "Konnte Speicherdatei nicht öffnen:",
+    "error.savefile:missing": "Speicherdatei nicht gefunden:",
+    "error.savevar": "Einstellung konnte nicht gespeichert werden:",
     "error.actionHandler.action_unknown": "Unbekannte Aktion:"
 }

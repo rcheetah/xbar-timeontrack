@@ -25,6 +25,7 @@
 # at all and the variable never shows up in Settings > Plugins > Plugin Variables.
 #  <swiftbar.var>string(VAR_LANGUAGE_OVERRIDE=""): Override the system language using a language code (e.g. en_US, de_DE)</swiftbar.var>
 #  <swiftbar.var>boolean(VAR_DEV_MODE="false"): Developer mode. Use a separate data directory and mark the menu bar item, so a test copy can run alongside the real one without touching its data.</swiftbar.var>
+#  <swiftbar.var>boolean(VAR_SKIP_SAVEFILE_WARNING="false"): Skip the warning before opening the data file. Set by choosing the "don't ask again" button in that dialog; switch it back off here to see the warning again.</swiftbar.var>
 
 
 require 'json'
@@ -52,6 +53,18 @@ $ICON = {
 }
 
 
+# Are two paths the same directory on disk? Compares device + inode, so it is immune to
+# spelling differences that a string comparison would trip over — notably macOS's
+# case-insensitive filesystem, where SwiftBar reports `.../SwiftBar/Plugins/...` while the
+# plugin folder resolves to `.../swiftbar/plugins`. A prefix test on those strings is false,
+# which is how the data-directory guard silently stopped working.
+def same_dir?(a, b)
+  sa = File.stat(a) rescue nil
+  sb = File.stat(b) rescue nil
+  return false if sa.nil? || sb.nil?
+  return sa.dev == sb.dev && sa.ino == sb.ino
+end
+
 # The plugin runs from a symlink in the host's plugin folder. Ruby's __dir__ already
 # resolves symlinks, but realpath makes that explicit and guarantees the directory we
 # read our bundled assets from is the real repository.
@@ -77,15 +90,43 @@ $DATA_DIR = "" unless File.directory?($DATA_DIR)
 
 unless $DATA_DIR.empty?
   resolved = File.realpath($DATA_DIR) rescue $DATA_DIR
-  # Directories that mean "this variable is not telling us a sane location": the repo
-  # (the plugin lives there) and SwiftBar's plugin folder (everything in it is treated as
-  # a plugin, and that is where the 2.1.x regression lands).
-  forbidden = [$PLUGIN_DIR]
-  plugins_path = ENV["SWIFTBAR_PLUGINS_PATH"].to_s
-  forbidden << (File.realpath(plugins_path) rescue plugins_path) unless plugins_path.empty?
 
-  if forbidden.any? { |base| resolved == base || resolved.start_with?(base + File::SEPARATOR) }
-    $DATA_DIR = ""
+  # Trust only a directory that is plainly outside the plugin world. This must not depend
+  # on SWIFTBAR_PLUGINS_PATH: that variable is present for ordinary plugin runs but NOT in
+  # plugin.env, which is what SwiftBar hands to menu *actions*. A guard that silently stops
+  # guarding depending on how the plugin was invoked is worse than no guard.
+  #
+  # Instead, derive the forbidden roots from information that is always available:
+  # $PLUGIN_DIR (where the code lives, via realpath) and $0/$SWIFTBAR_PLUGIN_PATH (how we
+  # were invoked). Walking up from the invoked path covers SwiftBar's plugin folder without
+  # naming it.
+  #
+  # The comparison MUST NOT be a string prefix test. SwiftBar hands us a path spelled
+  # `.../SwiftBar/Plugins/...` while the plugin folder resolves to `.../swiftbar/plugins`;
+  # macOS treats those as one directory but Ruby compares case-sensitively, so
+  # `start_with?` returns false and the guard silently does nothing. Verified against the
+  # live plugin: `resolved` kept the capitalised spelling and `hit` was false.
+  #
+  # Compare by filesystem identity instead: walk the candidate upwards and stop as soon as
+  # an ancestor is the same directory as one we must avoid (same device + inode). This is
+  # case-insensitive for free, and also survives symlinked or aliased path spellings.
+  forbidden = [$PLUGIN_DIR]
+  [ENV["SWIFTBAR_PLUGINS_PATH"], ENV["SWIFTBAR_PLUGIN_PATH"], $PROGRAM_NAME].each do |candidate|
+    next if candidate.to_s.empty?
+    dir = File.dirname(candidate.to_s)
+    forbidden << dir if File.directory?(dir)
+  end
+
+  # Walk up from the data dir; if any ancestor is a forbidden directory, reject.
+  probe = resolved
+  loop do
+    if forbidden.any? { |base| same_dir?(probe, base) }
+      $DATA_DIR = ""
+      break
+    end
+    parent = File.dirname(probe)
+    break if parent == probe # reached the root
+    probe = parent
   end
 end
 
@@ -144,13 +185,52 @@ $data = nil
 # Passing values via argv sidesteps both: the script text stays pure ASCII and the values
 # never travel through the shell.
 
+# Absolute path by default: the plugin runs with <swiftbar.runInBash>false, so it inherits
+# SwiftBar's minimal environment rather than a login shell's, and PATH is not guaranteed.
+#
+# The env override exists so tests can substitute a stub. Without it a test that exercises
+# a dialog would block on a real modal window and hang instead of failing.
+OSASCRIPT = ENV["TIMEONTRACK_OSASCRIPT"].to_s.empty? ? "/usr/bin/osascript" : ENV["TIMEONTRACK_OSASCRIPT"]
+
 def run_osascript(script, *args)
   # Read as UTF-8 regardless of locale, then scrub defensively so a malformed byte can
   # never take down an action.
-  out = IO.popen(["osascript", "-e", script, "--", *args.map(&:to_s)],
+  out = IO.popen([OSASCRIPT, "-e", script, "--", *args.map(&:to_s)],
                  external_encoding: Encoding::UTF_8, err: File::NULL, &:read)
   return nil unless $?.success?
   return out.to_s.force_encoding(Encoding::UTF_8).scrub
+rescue Errno::ENOENT, Errno::EACCES => error
+  # Do NOT use alert() here: alert() goes through run_osascript, so a missing osascript
+  # would recurse until the stack blew. Record it where it can be found instead.
+  log_error("osascript unavailable (#{error.class}): #{error.message}")
+  return nil
+end
+
+# Last-resort error trail. Dialogs are the normal channel, but they are exactly what is
+# unavailable when something is wrong with the dialog machinery.
+#
+# Falls back to a fixed path in /tmp: the data directory is itself computed from the
+# environment, so if that is what is broken, logging there would fail too and we would be
+# blind to the very problem we are trying to see.
+def log_error(message)
+  line = "#{Time.now.strftime("%Y-%m-%d %H:%M:%S")}  #{message}\n"
+  written = false
+
+  [[$DATA_DIR, "errors.log"], ["/tmp", "TimeOnTrack-errors.log"]].each do |dir, name|
+    next if dir.to_s.empty?
+    begin
+      FileUtils.mkpath(dir)
+      File.open(File.join(dir, name), "a", encoding: "UTF-8") { |io| io.write(line) }
+      written = true
+      break
+    rescue StandardError
+      next
+    end
+  end
+
+  # Logging must never be the thing that breaks an action.
+  return if written
+  nil
 end
 
 def prompt(text, title: "", input: "")
@@ -183,6 +263,71 @@ def yes_no_prompt(text, title: "")
   SCRIPT
   result = run_osascript(script, text, title, no, yes)
   return result.to_s.strip == "true"
+end
+
+# Yes/No dialog offering "don't ask again" as a third button. Returns
+# [confirmed, dont_ask_again].
+#
+# Why a button and not a checkbox: `display dialog` has no checkbox control, and the
+# obvious alternative — NSAlert via AppleScriptObjC — does not work here. SwiftBar runs
+# actions with `terminal=false`, i.e. `runInBackground: true`, so the process has no GUI
+# session; an NSAlert belongs to the osascript process and its window is never shown
+# (verified: the frontmost application stays Finder for the whole run). A dialog shown
+# through System Events has no such problem, because System Events is itself a GUI app.
+#
+# Semantics: only the "don't ask again" button persists, and it also means Yes. A plain
+# "No" must not switch the dialog off permanently — this dialog is the feature's only
+# entry point, so that would make it unreachable.
+def confirm_with_skip_option(text, title: "", skip_label: "")
+  yes = t("prompt.yes")
+  no = t("prompt.no")
+  script = <<~SCRIPT
+    on run argv
+      tell application "System Events"
+        display dialog (item 1 of argv) with title (item 2 of argv) buttons {item 3 of argv, item 4 of argv, item 5 of argv} default button (item 5 of argv)
+        return button returned of result
+      end tell
+    end run
+  SCRIPT
+
+  # Button order: {no, skip, yes} renders as  No | Don't ask again | Yes(default, rightmost).
+  result = run_osascript(script, text, title, no, skip_label, yes)
+  return [false, false] if result.nil? # cancelled or osascript failed
+
+  answer = result.to_s.strip
+  return [true, true] if answer == skip_label
+  return [answer == yes, false]
+end
+
+# Path of the vars file SwiftBar keeps beside the plugin
+# (<plugin>.vars.json). Returns nil when it cannot be determined, e.g. when the script is
+# run by hand and SWIFTBAR_PLUGIN_PATH is absent.
+def vars_file_path
+  plugin = ENV["SWIFTBAR_PLUGIN_PATH"].to_s
+  return nil if plugin.empty?
+  dir = File.dirname(plugin)
+  return File.join(dir, File.basename(plugin, ".*") + ".vars.json")
+end
+
+# Persist a plugin variable so SwiftBar picks it up on the next run. Values are merged,
+# never replaced, so unrelated settings survive.
+#
+# SwiftBar itself only reads this file when it parses the plugin metadata, so the change
+# takes effect on the next refresh rather than instantly. It also means the variable must
+# be declared as a <swiftbar.var> tag: SwiftBar builds the environment from the declared
+# variables, so a key that exists only in the vars file is ignored. Declaring it also makes
+# it visible (and resettable) in Settings > Plugins > Plugin Variables.
+def save_plugin_var(name, value)
+  path = vars_file_path
+  return false if path.nil?
+
+  values = File.exist?(path) ? (read_json(path) rescue {}) : {}
+  values[name] = value.to_s
+  File.write(path, JSON.generate(values), encoding: "UTF-8")
+  return true
+rescue => error
+  alert("#{t("error.savevar")} \n#{error.message}")
+  return false
 end
 
 def alert(text, title: "")
@@ -865,9 +1010,34 @@ def actionHandler()
     end
 
   when "savefile:edit"
-    confirmed = yes_no_prompt(t("prompt.savefile.edit.message"), title: t("prompt.savefile.edit.title"))
-    `open #{$SAVEFILE}` if confirmed
     begin
+      # The warning is skipped once the user chose "don't ask again". That preference lives
+      # in SwiftBar's own plugin variables, so it can be undone in
+      # Settings > Plugins > Plugin Variables without needing a reset command here.
+      proceed = true
+      unless var_set?(ENV["VAR_SKIP_SAVEFILE_WARNING"])
+        confirmed, dont_ask = confirm_with_skip_option(
+          t("prompt.savefile.edit.message"),
+          title: t("prompt.savefile.edit.title"),
+          skip_label: t("prompt.savefile.edit.skip")
+        )
+        # Only a Yes may persist, and only a Yes proceeds.
+        proceed = confirmed
+        save_plugin_var("VAR_SKIP_SAVEFILE_WARNING", "true") if confirmed && dont_ask
+      end
+
+      # No early `return` here: that would skip the saveJSON() at the end of this method,
+      # discarding the running entry's latest tick for no reason.
+      if proceed
+        # Shellwords.escape is required: the data directory contains a space
+        # ("Application Support"), and an unescaped path is split into several arguments,
+        # which makes `open` fail silently.
+        if File.exist?($SAVEFILE)
+          `open #{Shellwords.escape($SAVEFILE)}`
+        else
+          alert("#{t("error.savefile:missing")} \n#{$SAVEFILE}")
+        end
+      end
     rescue => error
       alert("#{t("error.savefile:edit")} \n#{error.message}\n#{error.backtrace.join("\n")}")
     end

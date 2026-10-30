@@ -83,11 +83,27 @@ $DATA_DIR   = ~/Library/Application Support/TimeOnTrack
   Even on a fixed build the value would be `<plugin folder>/<this file's name>` — the plugin
   file itself, because on macOS's case-insensitive volume SwiftBar's support directory and the
   plugin folder are one directory.
-  The code therefore accepts the variable only when it is a real directory that is **not**
-  inside `$PLUGIN_DIR` and **not** inside `SWIFTBAR_PLUGINS_PATH` (the plugin folder —
-  everything in there is treated as a plugin candidate). Otherwise it falls back to
-  `~/Library/Application Support/TimeOnTrack`. A test asserting the fallback for a simulated
-  2.1.x path is worth keeping.
+  The variable is accepted only when it is a real directory that does not sit inside a
+  "forbidden" root; otherwise it falls back to `~/Library/Application Support/TimeOnTrack`.
+
+  **The comparison must be by filesystem identity, not by string prefix.** A `start_with?`
+  test is silently wrong here and cost real debugging time: SwiftBar hands us
+  `…/SwiftBar/Plugins/…` (capital S, capital P) while the plugin folder resolves to
+  `…/swiftbar/plugins`. macOS treats those as one directory, but Ruby compares
+  case-sensitively, so the guard returned false and the plugin happily wrote the user's data
+  into the plugin folder — where SwiftBar then imported `journal.html` as a plugin, adding it
+  to `DisabledPlugins` and rescanning the folder in a loop.
+  `same_dir?` therefore compares `dev` + `ino`, and the check walks *upwards* from the data
+  directory so any ancestor match rejects it.
+
+  The forbidden roots are derived from `$PLUGIN_DIR` and from `SWIFTBAR_PLUGIN_PATH` /
+  `$PROGRAM_NAME` — deliberately **not** from `SWIFTBAR_PLUGINS_PATH`, which is absent from
+  `plugin.env` and therefore missing in action mode. A guard that stops guarding depending on
+  how the plugin was invoked is worse than none.
+
+  Symptom to recognise: user data accumulating under
+  `~/Library/Application Support/swiftbar/plugins/Users/…` — i.e. a directory literally named
+  `Users` inside the plugin folder.
 - Bundled assets (`TimeOnTrack/lang/`) are read from `$PLUGIN_DIR`; mutable state from
   `$DATA_DIR`.
 - **Dev mode** (`VAR_DEV_MODE` setting, or `SWIFTBAR_TIMEONTRACK_DEV=1` for CLI runs) appends
@@ -106,18 +122,24 @@ $DATA_DIR   = ~/Library/Application Support/TimeOnTrack
 Sections are marked with comments; keep new code inside the matching section.
 
 1. **Metadata** — the commented header SwiftBar parses. Also holds
-   `swiftbar.var` declarations (currently `VAR_LANGUAGE_OVERRIDE`).
-2. **Constants** — `$ICON` (base64 SVGs), paths, `$FONT_MENU`, `$EMPTY_DATA`.
-3. **Prompts** — AppleScript dialogs (`prompt`, `yes_no_prompt`, `alert`, `show_dialog`).
-   These block on user input and are only reachable from action runs.
-4. **Helpers** — i18n (`t`, `load_language_file`), `icon`, `escape_html`, `run_command`,
-   `format_duration`, `read_json`.
+   `swiftbar.var` declarations (`VAR_LANGUAGE_OVERRIDE`, `VAR_DEV_MODE`,
+   `VAR_SKIP_SAVEFILE_WARNING`).
+2. **Constants** — `$ICON` (base64 SVGs), paths, `$FONT_MENU`, `$EMPTY_DATA`, plus
+   `same_dir?` and `var_set?`.
+3. **Prompts** — AppleScript dialogs (`prompt`, `yes_no_prompt`,
+   `confirm_with_skip_option`, `alert`, `show_dialog`), `run_osascript`, `log_error`, and the
+   plugin-variable helpers (`vars_file_path`, `save_plugin_var`). Dialogs block on user input
+   and are only reachable from action runs.
+4. **Helpers** — i18n (`t`, `load_language_file`), `icon`, `running_icon`, `escape_html`,
+   `menu_line`, `run_command`, `format_duration`, `read_json`.
 5. **Getters** — `getJobById`, `getEntryById`, `getActiveJob`, `archive_jobs`.
 6. **Main functions** — mutations (`createNewJob`, `startNewEntry`, `deleteJob`, …) and the
    daily-summary generator.
 7. **Journal** — `journal_payload` / `journal_i18n` / `generateJournal`. See below.
 8. **Menu** — `buildMenu`, which prints SwiftBar's line format to stdout.
-9. **Action handler** — `actionHandler`, dispatching on `ARGV`.
+9. **Action handler** — `actionHandler`, dispatching on `ARGV`. **Every branch must have a
+   `begin`/`rescue` with an `alert`** — a branch without one fails silently, which is how a
+   crash in `job:pause`/`job:stop`/`job:archive` went unnoticed.
 10. **`_main`** — the entry point.
 
 ## The journal
@@ -272,6 +294,33 @@ Keep the script body pure ASCII and pass values as argv. Note that `default butt
 item reference (`(item 4 of argv)`), not a bare number — a number is a *button index*, and an
 out-of-range one fails with "-50: button does not exist".
 
+### Do not use NSAlert for dialogs
+
+`display dialog` cannot show a checkbox, which is why `confirm_with_skip_option` offers
+"don't ask again" as a **third button** instead. The obvious alternative — building an
+`NSAlert` through AppleScriptObjC — does not work in this plugin, and it fails in the worst
+possible way:
+
+SwiftBar runs menu actions with `terminal=false`, i.e. `runInBackground: true`, so the
+osascript process has no GUI session. An NSAlert belongs to that process and its window is
+**never displayed** — but `runModal()` still blocks. The action appears to do nothing at all
+while the process waits invisibly for a click that cannot come. Verified: the frontmost
+application stays `Finder` for the entire run, and the `alert` process owns zero windows.
+
+That is a fundamentally different failure from a silent early return, and it is invisible
+from inside the plugin. `display dialog` shows through System Events, which *is* a GUI app,
+so it works regardless of how the action was launched. Prefer it, even when it means using
+buttons where a checkbox would read better.
+
+Three-button ordering: `buttons {no, skip, yes}` with `default button (item 5 of argv)`
+renders as `No | Don't ask again | Yes` with Yes rightmost and default.
+
+Semantics of the skip option: **only a Yes may persist it, and the skip button itself means
+Yes.** The dialog is the feature's only entry point, so persisting on "no" would make the
+feature permanently unreachable. The preference is stored in SwiftBar's own plugin variables
+(`save_plugin_var`), which makes Settings ▸ Plugins ▸ Plugin Variables the reset mechanism —
+no custom "reset" command needed.
+
 ### Icons must be template images
 
 `icon()` emits `templateImage=`, never `image=`. A template image is recoloured by macOS to
@@ -321,7 +370,7 @@ SWIFTBAR_PLUGIN_DATA_PATH=/tmp/tot-test ruby TimeOnTrack.1s.rb job:pause
 `bin/seed-data.rb` writes to `tmp/seed-data` by default (gitignored) and never touches real
 data.
 
-Four gotchas:
+Seven gotchas, the last three learned the hard way:
 
 - **Confirmation dialogs auto-confirm in a headless shell** — `osascript` returns the default
   button rather than blocking. So `job:delete` / `entry:delete` will actually delete when run
@@ -334,6 +383,17 @@ Four gotchas:
 - **The language in action mode comes from `$data["language"]`, not from the environment.**
   Setting `VAR_LANGUAGE_OVERRIDE` on a `journal:open` call has no effect by design; run the
   plugin once without arguments to persist the language, then invoke the action.
+- **Never test dialogs without stubbing `osascript`.** `OSASCRIPT` honours the
+  `TIMEONTRACK_OSASCRIPT` env override precisely so a test can point it at a stub. Without
+  that, a test that reaches a dialog opens a real modal window and hangs until it is killed —
+  which cost several wasted runs. A stub that simply echoes a button label
+  (e.g. `printf 'Yes\n'`) is enough.
+- **A shell stub directory on `PATH` only works for unqualified commands.** Once a call site
+  uses an absolute path (`/usr/bin/osascript`, `/usr/bin/open`), prepending to `PATH` has no
+  effect and the real binary runs. Pass a stub path explicitly via the env var instead.
+- **`_main()` is indented by two spaces** and is the very last line. Scripts that strip it to
+  load the file without running the menu must match that indentation, or the replace silently
+  does nothing — this produced several false "the code doesn't work" results.
 
 ### Journal checks
 

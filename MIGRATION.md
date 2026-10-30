@@ -115,6 +115,11 @@ knowing before anyone "simplifies" it back.
 | UTF-8 not forced when reading JSON | With `LANG` unset Ruby reads as US-ASCII and **raises** on translated language files |
 | `loadJSON` assumed `$data["jobs"]` exists | An empty or hand-edited data file crashed the plugin |
 | Journal written to `$TMPDIR` with a timestamp | Bookmarks broke on every view, files accumulated, and macOS purged them after 3 days |
+| Data-directory guard compared paths as strings | SwiftBar reports `…/SwiftBar/Plugins/…` but the plugin folder resolves to `…/swiftbar/plugins`; macOS calls those one directory, Ruby compared case-sensitively, so the guard never fired and **user data was written into the plugin folder** — where SwiftBar then imported `journal.html` as a plugin and rescanned in a loop (see "Where data lives") |
+| `NSAlert` used for the "don't ask again" dialog | Actions run detached (`terminal=false`), so the alert had no GUI session: the window was never shown, yet `runModal()` blocked. The action looked completely dead. Replaced with a third `display dialog` button (see "Dialog text") |
+| `job:pause`, `job:stop`, `job:archive` had no `rescue` | Unlike every other branch, so a failure there vanished silently |
+| `savefile:edit` interpolated its path into the shell | The data directory contains a space (`Application Support`), so the path split into two arguments and `open` failed silently. Also had a misplaced `begin`/`rescue` that wrapped nothing |
+| `error.job:summary` referenced but never defined | The raw key would have been shown instead of a message |
 
 ### The journal was rebuilt
 

@@ -32,6 +32,7 @@
     "prompt.entry.rename": "Give a name for this entry of “%{jobname}” with a time of %{duration}:",
     "prompt.savefile.edit.message": "Editing the source file directly can make it invalid! Only use this function if you know exactly what you're doing—and be careful. \nDo you really want to open the file?",
     "prompt.savefile.edit.title": "WARNING!",
+    "prompt.savefile.edit.skip": "Yes, don't ask again",
     "prompt.yes": "Yes",
     "prompt.no": "No",
     "journal.title": "TimeOnTrack Journal",
@@ -91,5 +92,7 @@
     "error.entry:rename": "Could not rename entry:",
     "error.journal:open": "Could not open journal:",
     "error.savefile:edit": "Could not open savefile:",
+    "error.savefile:missing": "Data file not found:",
+    "error.savevar": "Could not save the setting:",
     "error.actionHandler.action_unknown": "Unknown action:"
 }
