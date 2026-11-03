@@ -25,7 +25,7 @@
 # at all and the variable never shows up in Settings > Plugins > Plugin Variables.
 #  <swiftbar.var>string(VAR_LANGUAGE_OVERRIDE=""): Override the system language using a language code (e.g. en_US, de_DE)</swiftbar.var>
 #  <swiftbar.var>boolean(VAR_DEV_MODE="false"): Developer mode. Use a separate data directory and mark the menu bar item, so a test copy can run alongside the real one without touching its data.</swiftbar.var>
-#  <swiftbar.var>boolean(VAR_SKIP_SAVEFILE_WARNING="false"): Skip the warning before opening the data file. Set by choosing the "don't ask again" button in that dialog; switch it back off here to see the warning again.</swiftbar.var>
+#  <swiftbar.var>boolean(VAR_SKIP_SAVEFILE_WARNING="false"): Skip the warning before revealing the data file. Set by choosing the "don't ask again" button in that dialog; switch it back off here to see the warning again.</swiftbar.var>
 
 
 require 'json'
@@ -796,7 +796,7 @@ def buildMenu()
   puts "---"
 
   puts menu_line(t("journal.show"), run_command("journal:open"), icon("journal"))
-  puts menu_line(t("savefile.edit"), run_command("savefile:edit"), "alternate=true")
+  puts menu_line(t("savefile.reveal"), run_command("savefile:reveal"), "alternate=true")
 
   # An unmistakable in-menu banner, plus the data directory, so it is obvious that this
   # copy is the dev one and which files it writes to.
@@ -1009,17 +1009,21 @@ def actionHandler()
       alert("#{t("error.journal:open")} \n#{error.message}\n#{error.backtrace.join("\n")}")
     end
 
-  when "savefile:edit"
+  when "savefile:reveal"
     begin
+      # Reveals the file in Finder instead of launching an editor on it. The warning stays:
+      # revealing puts the user one double-click away from editing, which is exactly the
+      # situation it exists to flag.
+      #
       # The warning is skipped once the user chose "don't ask again". That preference lives
       # in SwiftBar's own plugin variables, so it can be undone in
       # Settings > Plugins > Plugin Variables without needing a reset command here.
       proceed = true
       unless var_set?(ENV["VAR_SKIP_SAVEFILE_WARNING"])
         confirmed, dont_ask = confirm_with_skip_option(
-          t("prompt.savefile.edit.message"),
-          title: t("prompt.savefile.edit.title"),
-          skip_label: t("prompt.savefile.edit.skip")
+          t("prompt.savefile.reveal.message"),
+          title: t("prompt.savefile.reveal.title"),
+          skip_label: t("prompt.savefile.reveal.skip")
         )
         # Only a Yes may persist, and only a Yes proceeds.
         proceed = confirmed
@@ -1033,13 +1037,13 @@ def actionHandler()
         # ("Application Support"), and an unescaped path is split into several arguments,
         # which makes `open` fail silently.
         if File.exist?($SAVEFILE)
-          `open #{Shellwords.escape($SAVEFILE)}`
+          `open -R #{Shellwords.escape($SAVEFILE)}`
         else
           alert("#{t("error.savefile:missing")} \n#{$SAVEFILE}")
         end
       end
     rescue => error
-      alert("#{t("error.savefile:edit")} \n#{error.message}\n#{error.backtrace.join("\n")}")
+      alert("#{t("error.savefile:reveal")} \n#{error.message}\n#{error.backtrace.join("\n")}")
     end
 
   else

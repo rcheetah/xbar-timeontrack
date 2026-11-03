@@ -18,15 +18,17 @@
 
 1. Install [SwiftBar](https://github.com/swiftbar/SwiftBar#installation) and choose a plugin
    folder when it first launches.
-2. Get this repository and link the plugin into that folder:
+2. Get this repository and link the plugin into your plugin folder:
 
    ```bash
    git clone https://github.com/rcheetah/xbar-timeontrack.git
-   ln -s "$PWD/xbar-timeontrack/TimeOnTrack.1s.rb" \
+   cd xbar-timeontrack
+   ln -s "$PWD/TimeOnTrack.1s.rb" \
          ~/Library/Application\ Support/swiftbar/plugins/
    ```
 
-   SwiftBar follows symlinks, so the plugin runs straight from your checkout.
+   Swap the last path for whatever plugin folder you chose in step 1. SwiftBar follows
+   symlinks, so the plugin runs straight from your checkout — `git pull` updates it.
 
 Alternatively, use SwiftBar's URL scheme:
 
@@ -146,9 +148,14 @@ SWIFTBAR_TIMEONTRACK_DEV=1 ruby TimeOnTrack.1s.rb
 
 ## Migrating from xbar
 
-Earlier versions of this plugin ran under [xbar](https://xbarapp.com). The plugin is now
-SwiftBar-only. If you are coming from the xbar version, see [MIGRATION.md](MIGRATION.md) for
-what changed and how to move your existing data across.
+Earlier versions of this plugin ran under [xbar](https://xbarapp.com); it is now
+**SwiftBar-only**. See [MIGRATION.md](MIGRATION.md) for the compatibility differences and the
+history. If you still have data in an xbar installation, copy `TimeOnTrackData.json` and
+`TimeOnTrackArchive.json` into `~/Library/Application Support/TimeOnTrack/` — the schema is
+unchanged, so no conversion is needed.
+
+Your time data lives **only** in that Application Support directory, not in the repository.
+Back it up before experimenting.
 
 ## Acknowledgments
 

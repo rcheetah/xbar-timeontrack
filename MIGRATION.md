@@ -191,85 +191,50 @@ user is clicking. Worth benchmarking later; not part of this migration.
 
 ---
 
-## Cutover procedure — NOT YET PERFORMED
+## Cutover — COMPLETED 2026-11-03
 
-The xbar plugin is **still the live production plugin**. Until it is replaced, it keeps
-running and writing its own data. Nothing below has been executed.
+**SwiftBar is now the live, production installation.** xbar has been quit and the data was
+migrated by hand. This section is a record, not a procedure — do not re-run it.
 
-The two installations are independent: the xbar version lives in `~/git/xbar-timeontrack`
-with data beside it, the SwiftBar version in `~/git/swiftbar-timeontrack` with data in
-`~/Library/Application Support/TimeOnTrack/`. They do not share files.
+Current state:
 
-### Before switching
+| | |
+|---|---|
+| Live plugin | `~/Library/Application Support/swiftbar/plugins/TimeOnTrack.1s.rb` → this repository |
+| Data | `~/Library/Application Support/TimeOnTrack/` |
+| xbar | quit, and `~/git/xbar-timeontrack` has since been deleted |
+| Language | `de_AT` (no `de_AT.json` exists, so it resolves to `de_DE`) |
 
-1. Confirm the SwiftBar plugin works, using a **dev-named** plugin link so it can coexist
-   with the live one:
+### What the cutover involved
 
-   ```bash
-   ln -s ~/git/swiftbar-timeontrack/TimeOnTrack.1s.rb \
-         ~/Library/Application\ Support/swiftbar/plugins/TimeOnTrack-dev.1s.rb
-   ```
-
-   Then check the menu, the ticking clock, pause/stop/new, and the journal. Both plugins will
-   share the same data directory while testing, so seed it with throwaway data first (or
-   expect the dev copy to show the same jobs):
-
-   ```bash
-   ruby ~/git/swiftbar-timeontrack/bin/seed-data.rb \
-        ~/Library/Application\ Support/TimeOnTrack
-   ```
-
-2. **Stop the xbar plugin first.** Quit xbar (or disable the plugin) and wait until no entry
-   is running. Migrating while it is still ticking would race on the data file.
-
-3. Copy the real data across:
-
-   ```bash
-   DEST=~/Library/Application\ Support/TimeOnTrack
-   mkdir -p "$DEST"
-   cp ~/git/xbar-timeontrack/TimeOnTrack/TimeOnTrackData.json    "$DEST/"
-   cp ~/git/xbar-timeontrack/TimeOnTrack/TimeOnTrackArchive.json "$DEST/"
-   ```
-
-   The schema is unchanged, so no conversion is needed. `total` values are recomputed from
-   `end - start` on load, so any staleness in them corrects itself.
-
-4. Verify the migrated data renders — total time per job and the journal should match what
-   xbar showed.
-
-### Switching over
-
-5. Remove the dev link and point the real plugin name at the new repository:
-
-   ```bash
-   cd ~/Library/Application\ Support/swiftbar/plugins
-   rm TimeOnTrack-dev.1s.rb
-   ln -sf ~/git/swiftbar-timeontrack/TimeOnTrack.1s.rb TimeOnTrack.1s.rb
-   ```
-
-6. Clean up the leftovers created by the old `__dir__` bug — the stray `lang/` directory and
-   the empty `de_DE.json/`, `en_US.json/` directories in the plugins folder:
-
-   ```bash
-   rm -rf ~/Library/Application\ Support/swiftbar/plugins/lang \
-          ~/Library/Application\ Support/swiftbar/plugins/de_DE.json \
-          ~/Library/Application\ Support/swiftbar/plugins/en_US.json
-   ```
-
-   and drop the now-dangling `DisabledPlugins` entries (the SwiftBar preferences domain is
-   `com.ameba.SwiftBar`):
-
-   ```bash
-   defaults read com.ameba.SwiftBar DisabledPlugins
-   # then, if de_DE.json / en_US.json are still listed:
-   defaults delete com.ameba.SwiftBar DisabledPlugins
-   ```
-
-7. Keep `~/git/xbar-timeontrack` and its data untouched until you are satisfied the SwiftBar
-   version is correct — it is the only remaining copy of the original data.
+1. Run the SwiftBar plugin alongside xbar via a dev-named link (`TimeOnTrack-dev.1s.rb`), and
+   verify the menu, the ticking clock, the actions and the journal. Dev mode (`VAR_DEV_MODE`)
+   keeps the two copies from sharing a data directory while testing.
+2. Quit xbar **with no entry running**, so no session was split across the switch.
+3. Copy `TimeOnTrackData.json` and `TimeOnTrackArchive.json` into
+   `~/Library/Application Support/TimeOnTrack/`. The schema is unchanged, so no conversion
+   was needed; `total` values are recomputed from `end - start` on load.
+4. Remove the dev link and point `TimeOnTrack.1s.rb` at this repository.
+5. Clean up the stray `lang/`, `de_DE.json/` and `en_US.json/` entries that the old plugin had
+   left in the plugin folder — SwiftBar treats everything in that folder as a plugin
+   candidate, which is why two of them had landed in `DisabledPlugins`.
 
 ### Rolling back
 
-Delete the `TimeOnTrack.1s.rb` symlink from SwiftBar's plugin folder and restore the xbar
-plugin. Since nothing in `~/git/xbar-timeontrack` was modified, rollback is immediate and
-lossless (apart from time tracked on the SwiftBar side after the switch).
+No longer possible. `~/git/xbar-timeontrack` has been deleted, so there is no xbar copy to
+return to and no second copy of the pre-cutover data. Treat the data in
+`~/Library/Application Support/TimeOnTrack/` as the only copy — back it up before any
+experiment that writes to it.
+
+### Leftover to be aware of
+
+A directory tree named `Users/` still sits inside the plugin folder:
+
+```
+~/Library/Application Support/swiftbar/plugins/Users/e-dvertising/git/…/TimeOnTrack.1s.rb/
+```
+
+It is empty of files and harmless — it is the debris of the SwiftBar 2.1.x
+`SWIFTBAR_PLUGIN_DATA_PATH` bug described under "Where data lives" in `CLAUDE.md`. Safe to
+delete with `rm -rf` once nothing is looking at it; nothing recreates it now that the guard
+compares by filesystem identity.

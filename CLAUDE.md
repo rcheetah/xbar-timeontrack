@@ -109,10 +109,9 @@ $DATA_DIR   = ~/Library/Application Support/TimeOnTrack
 - **Dev mode** (`VAR_DEV_MODE` setting, or `SWIFTBAR_TIMEONTRACK_DEV=1` for CLI runs) appends
   `/dev` to `$DATA_DIR` and prefixes/tints the menu bar text (`$DEV_PREFIX`, `#E8A400`) plus a
   banner at the bottom of the dropdown. It exists so a new build can run alongside the
-  production plugin without the two writing to the same files. Note this is *not* what makes
-  the two safe in parallel — they are already safe because they resolve to entirely different
-  data directories (the xbar copy keeps data in its own repo). Dev mode is for running two
-  copies of *this* plugin.
+  production plugin without the two writing to the same files. Use it whenever you want to
+  test a change against real-shaped data without touching the single live dataset — see
+  "Testing" below.
 - Data files are intentionally **gitignored** — personal time data does not belong in a
   public repository. The `TimeOnTrack/*.json` paths are ignored too; they are only a stale
   fallback and are no longer written.
@@ -122,14 +121,12 @@ $DATA_DIR   = ~/Library/Application Support/TimeOnTrack
 Sections are marked with comments; keep new code inside the matching section.
 
 1. **Metadata** — the commented header SwiftBar parses. Also holds
-   `swiftbar.var` declarations (`VAR_LANGUAGE_OVERRIDE`, `VAR_DEV_MODE`,
-   `VAR_SKIP_SAVEFILE_WARNING`).
+   `swiftbar.var` declarations (`VAR_LANGUAGE_OVERRIDE`, `VAR_DEV_MODE`).
 2. **Constants** — `$ICON` (base64 SVGs), paths, `$FONT_MENU`, `$EMPTY_DATA`, plus
    `same_dir?` and `var_set?`.
-3. **Prompts** — AppleScript dialogs (`prompt`, `yes_no_prompt`,
-   `confirm_with_skip_option`, `alert`, `show_dialog`), `run_osascript`, `log_error`, and the
-   plugin-variable helpers (`vars_file_path`, `save_plugin_var`). Dialogs block on user input
-   and are only reachable from action runs.
+3. **Prompts** — AppleScript dialogs (`prompt`, `yes_no_prompt`, `alert`, `show_dialog`),
+   plus `run_osascript` and `log_error`. Dialogs block on user input and are only reachable
+   from action runs.
 4. **Helpers** — i18n (`t`, `load_language_file`), `icon`, `running_icon`, `escape_html`,
    `menu_line`, `run_command`, `format_duration`, `read_json`.
 5. **Getters** — `getJobById`, `getEntryById`, `getActiveJob`, `archive_jobs`.
@@ -296,10 +293,9 @@ out-of-range one fails with "-50: button does not exist".
 
 ### Do not use NSAlert for dialogs
 
-`display dialog` cannot show a checkbox, which is why `confirm_with_skip_option` offers
-"don't ask again" as a **third button** instead. The obvious alternative — building an
-`NSAlert` through AppleScriptObjC — does not work in this plugin, and it fails in the worst
-possible way:
+`display dialog` cannot show a checkbox. If a dialog ever needs one, do **not** reach for
+`NSAlert` through AppleScriptObjC: it does not work in this plugin, and it fails in the
+worst possible way.
 
 SwiftBar runs menu actions with `terminal=false`, i.e. `runInBackground: true`, so the
 osascript process has no GUI session. An NSAlert belongs to that process and its window is
@@ -310,16 +306,24 @@ application stays `Finder` for the entire run, and the `alert` process owns zero
 That is a fundamentally different failure from a silent early return, and it is invisible
 from inside the plugin. `display dialog` shows through System Events, which *is* a GUI app,
 so it works regardless of how the action was launched. Prefer it, even when it means using
-buttons where a checkbox would read better.
+extra buttons where a checkbox would read better.
 
 Three-button ordering: `buttons {no, skip, yes}` with `default button (item 5 of argv)`
-renders as `No | Don't ask again | Yes` with Yes rightmost and default.
+renders as `No | Don't ask again | Yes` with Yes rightmost and default. This is how
+`confirm_with_skip_option` presents the save-file warning.
 
-Semantics of the skip option: **only a Yes may persist it, and the skip button itself means
-Yes.** The dialog is the feature's only entry point, so persisting on "no" would make the
-feature permanently unreachable. The preference is stored in SwiftBar's own plugin variables
-(`save_plugin_var`), which makes Settings ▸ Plugins ▸ Plugin Variables the reset mechanism —
-no custom "reset" command needed.
+### Save-file actions keep their warning
+
+"Reveal Save File" opens Finder with the data file selected (`open -R`). It deliberately
+keeps the "editing can make this invalid" confirmation even though revealing itself is
+harmless: the user is one double-click from editing, which is the exact risk the warning
+exists to flag. Do not remove it on the grounds that "revealing changes nothing".
+
+Persistence uses `save_plugin_var`, so the "don't ask again" choice is a SwiftBar plugin
+variable (`VAR_SKIP_SAVEFILE_WARNING`) and Settings ▸ Plugins ▸ Plugin Variables is the
+reset mechanism — no custom reset command. Only a Yes may persist it, and the skip button
+itself means Yes; a plain "No" must never switch the dialog off, since this dialog is the
+feature's only entry point.
 
 ### Icons must be template images
 
@@ -377,9 +381,12 @@ Seven gotchas, the last three learned the hard way:
   from a script. Assume destructive actions *will* fire.
 - `journal:open` shells out to `open`, which launches a browser. To inspect the HTML without
   that, prepend a stub directory to `PATH` containing an `open` that echoes its argument.
-- **To test against production-scale data, copy it to a scratch directory first** — never
-  point the plugin at the real data directory. The live xbar install keeps writing its own
-  data files while you work, so a changing checksum there means nothing about your changes.
+- **The data directory is live.** SwiftBar is the production install and rewrites
+  `~/Library/Application Support/TimeOnTrack/TimeOnTrackData.json` every second while a timer
+  runs. A changing checksum there says nothing about your changes, and pointing a test at it
+  risks corrupting the only copy — there is no xbar fallback any more. To test against
+  production-scale data, copy it to a scratch directory first and point
+  `SWIFTBAR_PLUGIN_DATA_PATH` at the copy.
 - **The language in action mode comes from `$data["language"]`, not from the environment.**
   Setting `VAR_LANGUAGE_OVERRIDE` on a `journal:open` call has no effect by design; run the
   plugin once without arguments to persist the language, then invoke the action.
@@ -412,5 +419,5 @@ the embedded i18n object has its own name as its value (that means it was never 
 ## Related docs
 
 - `README.md` — user-facing install and feature documentation.
-- `MIGRATION.md` — the xbar→SwiftBar migration, the compatibility differences, and the
-  not-yet-performed cutover procedure.
+- `MIGRATION.md` — the xbar→SwiftBar migration: compatibility differences, bugs fixed along
+  the way, and the record of the completed cutover.
