@@ -1,6 +1,12 @@
 
 # TimeOnTrack
 
+> [!WARNING]
+> **This repository is archived.**
+> Development has moved to **[rcheetah/timeontrack](https://github.com/rcheetah/timeontrack)**.
+> This new plugin is now **SwiftBar-only** — the xbar version is no longer maintained and receives no fixes (xBar itself seems to be no longer actively developed).
+
+
 **TimeOnTrack** is a sophisticated time tracker for [xbar](https://xbarapp.com) that allows you to track, pause, and manage multiple projects simultaneously. It provides a convenient way to log time spent on different tasks and review your work history.
 
 - Track multiple projects concurrently
