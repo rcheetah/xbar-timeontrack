@@ -11,9 +11,9 @@
 #  <xbar.author>Roman Gebath</xbar.author>
 #  <xbar.author.github>rcheetah</xbar.author.github>
 #  <xbar.desc>A sophisticated time tracker, which allows to track and pause mulitple projects at once.</xbar.desc>
-#  <xbar.image>https://github.com/rcheetah/xbar-timeontrack/blob/ea0f22ad093ec8ed3eabca3a774f78f241752f54/screenshot.jpg</xbar.image>
+#  <xbar.image>https://raw.githubusercontent.com/rcheetah/timeontrack/main/screenshot.jpg</xbar.image>
 #  <xbar.dependencies>ruby</xbar.dependencies>
-#  <xbar.abouturl>https://github.com/rcheetah/xbar-timeontrack/</xbar.abouturl>
+#  <xbar.abouturl>https://github.com/rcheetah/timeontrack/</xbar.abouturl>
 
 # SwiftBar-only extras
 #  <swiftbar.hideLastUpdated>true</swiftbar.hideLastUpdated>

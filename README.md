@@ -21,8 +21,8 @@
 2. Get this repository and link the plugin into your plugin folder:
 
    ```bash
-   git clone https://github.com/rcheetah/xbar-timeontrack.git
-   cd xbar-timeontrack
+   git clone https://github.com/rcheetah/timeontrack.git
+   cd timeontrack
    ln -s "$PWD/TimeOnTrack.1s.rb" \
          ~/Library/Application\ Support/swiftbar/plugins/
    ```
@@ -36,7 +36,6 @@ Alternatively, use SwiftBar's URL scheme:
 open "swiftbar://addplugin?src=<url to TimeOnTrack.1s.rb>"
 ```
 
-The plugin needs Ruby, which ships with macOS.
 
 ## Where your data lives
 
@@ -48,8 +47,6 @@ Your tracked time is stored outside the repository, under your Application Suppo
 └── TimeOnTrackArchive.json   # archived jobs
 ```
 
-The plugin creates both files automatically — you never need to make them by hand, and you
-never need to keep the repository anywhere in particular for them to be found.
 
 ## Features
 
@@ -71,7 +68,7 @@ Individual entries can also be given a name, which shows up in the job list and 
 
 Completed or inactive jobs can be archived, keeping the data intact for future reference while decluttering your active job list. Archived jobs are hidden from the main view but remain accessible through the journal, ensuring that all data is preserved.
 
-### Comprehensive Journal Overview
+### Journal Overview
 
 *Show Journal* opens a self-contained page covering every job, active and archived, with
 all of its entries. It is a single offline HTML file — nothing is loaded from the network,
@@ -94,8 +91,6 @@ bookmark it. It shows when it was generated, and the ⟳ button fetches fresh nu
 > the current stable release (2.1.1) does not support the mechanism the button relies on — so
 > on 2.1.1 the button does nothing. **"Show Journal" from the menu always regenerates the
 > page**, so simply reopen it from there until the update lands.
-
-> 🛠️ **Work-in-progress:** This feature is still in development
 
 ### Daily Summary
 
@@ -148,11 +143,7 @@ SWIFTBAR_TIMEONTRACK_DEV=1 ruby TimeOnTrack.1s.rb
 
 ## Migrating from xbar
 
-Earlier versions of this plugin ran under [xbar](https://xbarapp.com); it is now
-**SwiftBar-only**. See [MIGRATION.md](MIGRATION.md) for the compatibility differences and the
-history. If you still have data in an xbar installation, copy `TimeOnTrackData.json` and
-`TimeOnTrackArchive.json` into `~/Library/Application Support/TimeOnTrack/` — the schema is
-unchanged, so no conversion is needed.
+Earlier versions of this plugin ran under [xbar](https://xbarapp.com); it is now **SwiftBar-only**. If you still have data in an xbar installation, copy `TimeOnTrackData.json` and `TimeOnTrackArchive.json` into `~/Library/Application Support/TimeOnTrack/` — the schema is unchanged, so no conversion is needed. See [MIGRATION.md](MIGRATION.md) for the compatibility differences and the history.
 
 Your time data lives **only** in that Application Support directory, not in the repository.
 Back it up before experimenting.
